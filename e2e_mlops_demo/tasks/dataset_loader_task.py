@@ -3,10 +3,11 @@ from e2e_mlops_demo.common import Task
 import openml
 from typing import Optional
 from pyspark.sql import DataFrame as SparkDataFrame
+from pandas import DataFrame as PandasDataFrame
 
 
 class DatasetLoaderTask(Task):
-    def get_data(self, limit: Optional[int] = None) -> SparkDataFrame:
+    def get_data(self, limit: Optional[int] = None) -> PandasDataFrame:
         self.logger.info("Loading the dataset")
         dataset = openml.datasets.get_dataset("CreditCardFraudDetection")
         X, y, _, _ = dataset.get_data(dataset_format="dataframe")
@@ -19,8 +20,7 @@ class DatasetLoaderTask(Task):
         if limit:
             _df = _df.head(limit)
         self.logger.info("Loading the dataset - done")
-        _spark_df = self.spark.createDataFrame(_df)
-        return _spark_df
+        return _df
 
     def prepare_database(self):
         db_name = self.conf["output"]["database"]
@@ -34,11 +34,12 @@ class DatasetLoaderTask(Task):
         output_conf = self.conf["output"]
         return f"{output_conf['database']}.{output_conf['table']}"
 
-    def save_data(self, sdf: SparkDataFrame):
+    def save_data(self, df: PandasDataFrame):
         full_table_name = self.get_output_table_name()
         self.logger.info(
             f"Saving data to {full_table_name}. Existing data will be overwritten"
         )
+        sdf = self.spark.createDataFrame(df)
         writer = (
             sdf.write.format("delta")
             .mode("overwrite")

@@ -8,7 +8,7 @@ Please follow the `entry_points` documentation for more details on how to config
 from setuptools import find_packages, setup
 from e2e_mlops_demo import __version__
 
-PACKAGE_REQUIREMENTS = ["PyYAML", "openml"]
+PACKAGE_REQUIREMENTS = ["PyYAML", "openml", "hyperopt"]
 
 DEV_REQUIREMENTS = [
     "setuptools",
