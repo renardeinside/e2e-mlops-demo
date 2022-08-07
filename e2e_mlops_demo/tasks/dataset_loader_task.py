@@ -12,8 +12,9 @@ class DatasetLoaderTask(Task):
         X, y, _, _ = dataset.get_data(dataset_format="dataframe")
         _df = X
         # sanitize column names
-        _df.rename(columns={"Class": "TARGET"})
+        _df.rename(columns={"Class": "TARGET"}, inplace=True)
         _df.columns = [c.lower() for c in _df]
+        _df.drop(columns=["time"], inplace=True)
         # limit data for testing purposes
         if limit:
             _df = _df.head(limit)
@@ -38,7 +39,12 @@ class DatasetLoaderTask(Task):
         self.logger.info(
             f"Saving data to {full_table_name}. Existing data will be overwritten"
         )
-        sdf.write.format("delta").mode("overwrite").saveAsTable(full_table_name)
+        writer = (
+            sdf.write.format("delta")
+            .mode("overwrite")
+            .option("overwriteSchema", "true")
+        )
+        writer.saveAsTable(full_table_name)
         self.logger.info("Data saved successfully!")
 
     def launch(self):

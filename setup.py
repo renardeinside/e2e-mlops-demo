@@ -32,7 +32,7 @@ setup(
     extras_require={"dev": DEV_REQUIREMENTS},
     entry_points={
         "console_scripts": [
-            "loader = e2e_mlops_demo.tasks.sample_etl_job:entrypoint",
+            "loader = e2e_mlops_demo.tasks.dataset_loader_task:entrypoint",
             "ml = e2e_mlops_demo.tasks.sample_ml_job:entrypoint",
         ]
     },
