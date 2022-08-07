@@ -1,0 +1,3 @@
+output:
+  database: "e2e_mlops_demo"
+  table: "fraud_data"

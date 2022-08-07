@@ -2,7 +2,7 @@
 # Please read YAML documentation for details on how to use substitutions and anchors.
 custom:
   basic-cluster-props: &basic-cluster-props
-    spark_version: "9.1.x-cpu-ml-scala2.12"
+    spark_version: "10.4.x-cpu-ml-scala2.12"
 
   basic-static-cluster: &basic-static-cluster
     new_cluster:
@@ -14,73 +14,14 @@ custom:
 environments:
   default:
     jobs:
-      ##################################################################
-      # this is an example job with single ETL task based on 2.0 API  #
-      #################################################################
-      - name: "e2e-mlops-demo-sample-etl-2.0"
-        <<: *basic-static-cluster
-        spark_python_task:
-          python_file: "file://e2e_mlops_demo/tasks/sample_etl_task.py"
-          parameters: ["--conf-file", "file:fuse://conf/test/sample_etl_config.yml"]
-      #######################################################################################
-      # this is an example job with single ETL task based on 2.1 API and wheel_task format #
-      ######################################################################################
-      - name: "e2e-mlops-demo-sample-etl"
+      - name: "e2e-mlops-demo-main"
         job_clusters:
           - job_cluster_key: "default"
             <<: *basic-static-cluster
         tasks:
-          - task_key: "main"
+          - task_key: "loader"
             job_cluster_key: "default"
             python_wheel_task:
               package_name: "e2e_mlops_demo"
-              entry_point: "etl" # take a look at the setup.py entry_points section for details on how to define an entrypoint
-              parameters: ["--conf-file", "file:fuse://conf/test/sample_etl_config.yml"]
-      ###############################################
-      # this is an example job with single ML task  #
-      ###############################################
-      - name: "e2e-mlops-demo-sample-ml"
-        job_clusters:
-          - job_cluster_key: "default"
-            <<: *basic-static-cluster
-        tasks:
-          - task_key: "main"
-            job_cluster_key: "default"
-            python_wheel_task:
-              package_name: "e2e_mlops_demo"
-              entry_point: "ml"
-              parameters: [ "--conf-file", "file:fuse://conf/test/sample_ml_config.yml" ]
-      #############################################################
-      # this is an example multitask job with notebook task       #
-      #############################################################
-      - name: "e2e-mlops-demo-sample-multitask"
-        job_clusters:
-          - job_cluster_key: "default"
-            <<: *basic-static-cluster
-        tasks:
-          - task_key: "etl"
-            job_cluster_key: "default"
-            spark_python_task:
-              python_file: "file://e2e_mlops_demo/tasks/sample_etl_task.py"
-              parameters: [ "--conf-file", "file:fuse://conf/test/sample_etl_config.yml" ]
-          - task_key: "ml"
-            depends_on:
-              - task_key: "etl"
-            job_cluster_key: "default"
-            python_wheel_task:
-              package_name: "e2e_mlops_demo"
-              entry_point: "ml"
-              parameters: [ "--conf-file", "file:fuse://conf/test/sample_ml_config.yml" ]
-          ###############################################################################
-          # this is an example task based on the notebook                               #
-          # Please note that first you'll need to add a Repo and commit notebook to it. #
-          ###############################################################################
-          - task_key: "notebook"
-            deployment_config:
-              no_package: true # we omit using package since code will be shipped directly from the Repo
-            depends_on:
-              - task_key: "ml"
-            job_cluster_key: "default"
-            notebook_task:
-              notebook_path: "/Repos/Staging/e2e_mlops_demo/notebooks/sample_notebook"
-
+              entry_point: "loader"
+              parameters: ["--conf-file", "file:fuse://conf/tasks/loader.yml"]
