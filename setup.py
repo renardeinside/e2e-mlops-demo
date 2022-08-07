@@ -8,7 +8,7 @@ Please follow the `entry_points` documentation for more details on how to config
 from setuptools import find_packages, setup
 from e2e_mlops_demo import __version__
 
-PACKAGE_REQUIREMENTS = ["PyYAML"]
+PACKAGE_REQUIREMENTS = ["PyYAML", "openml"]
 
 DEV_REQUIREMENTS = [
     "setuptools",
@@ -21,7 +21,7 @@ DEV_REQUIREMENTS = [
     "mlflow",
     "delta-spark",
     "scikit-learn",
-    "pandas"
+    "pandas",
 ]
 
 setup(
@@ -30,11 +30,12 @@ setup(
     setup_requires=["wheel"],
     install_requires=PACKAGE_REQUIREMENTS,
     extras_require={"dev": DEV_REQUIREMENTS},
-    entry_points = {
+    entry_points={
         "console_scripts": [
             "etl = e2e_mlops_demo.tasks.sample_etl_job:entrypoint",
-            "ml = e2e_mlops_demo.tasks.sample_ml_job:entrypoint"
-    ]},
+            "ml = e2e_mlops_demo.tasks.sample_ml_job:entrypoint",
+        ]
+    },
     version=__version__,
     description="",
     author="",

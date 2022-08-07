@@ -44,7 +44,10 @@ class DBUtilsFixture:
     def ls(self, path: str):
         _paths = Path(path).glob("*")
         _objects = [
-            FileInfoFixture(str(p.absolute()), p.name, p.stat().st_size, int(p.stat().st_mtime)) for p in _paths
+            FileInfoFixture(
+                str(p.absolute()), p.name, p.stat().st_size, int(p.stat().st_mtime)
+            )
+            for p in _paths
         ]
         return _objects
 
