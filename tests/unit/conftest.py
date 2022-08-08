@@ -10,11 +10,14 @@ from typing import Iterator
 from unittest.mock import patch
 
 import mlflow
+import pandas as pd
 import pytest
 from delta import configure_spark_with_delta_pip
 from pyspark.sql import SparkSession
 import logging
 from dataclasses import dataclass
+
+from sklearn.datasets import make_classification
 
 
 @dataclass
@@ -138,3 +141,11 @@ def dbutils_fixture() -> Iterator[None]:
     with patch("e2e_mlops_demo.common.get_dbutils", lambda _: DBUtilsFixture()):
         yield
     logging.info("Test session finished, patching completed")
+
+
+@pytest.fixture(scope="function")
+def dataset_fixture() -> pd.DataFrame:
+    X, y = make_classification(n_samples=100, n_classes=2)
+    df = pd.DataFrame(X, columns=[f"v{i}" for i in range(X.shape[-1])])
+    df["target"] = y
+    return df

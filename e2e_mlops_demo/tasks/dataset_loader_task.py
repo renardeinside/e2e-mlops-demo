@@ -1,15 +1,17 @@
-from e2e_mlops_demo.common import Task
+from typing import Optional
 
 import openml
-from typing import Optional
-from pyspark.sql import DataFrame as SparkDataFrame
 from pandas import DataFrame as PandasDataFrame
+
+from e2e_mlops_demo.common import Task
 
 
 class DatasetLoaderTask(Task):
     def get_data(self, limit: Optional[int] = None) -> PandasDataFrame:
         self.logger.info("Loading the dataset")
-        dataset = openml.datasets.get_dataset("CreditCardFraudDetection")
+        dataset = openml.datasets.get_dataset(
+            "CreditCardFraudDetection", download_qualities=False
+        )
         X, y, _, _ = dataset.get_data(dataset_format="dataframe")
         _df = X
         # sanitize column names
@@ -25,7 +27,7 @@ class DatasetLoaderTask(Task):
     def prepare_database(self):
         db_name = self.conf["output"]["database"]
 
-        if not db_name in [d.name for d in self.spark.catalog.listDatabases()]:
+        if db_name not in [d.name for d in self.spark.catalog.listDatabases()]:
             self.logger.info(f"Database {db_name} doesn't exist, creating it")
             self.spark.sql(f"CREATE DATABASE {db_name}")
             self.logger.info("Database has been created")

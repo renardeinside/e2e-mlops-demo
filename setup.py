@@ -8,7 +8,7 @@ Please follow the `entry_points` documentation for more details on how to config
 from setuptools import find_packages, setup
 from e2e_mlops_demo import __version__
 
-PACKAGE_REQUIREMENTS = ["PyYAML", "openml", "hyperopt"]
+PACKAGE_REQUIREMENTS = ["PyYAML", "openml", "hyperopt", "pydantic"]
 
 DEV_REQUIREMENTS = [
     "setuptools",
@@ -33,7 +33,7 @@ setup(
     entry_points={
         "console_scripts": [
             "loader = e2e_mlops_demo.tasks.dataset_loader_task:entrypoint",
-            "ml = e2e_mlops_demo.tasks.sample_ml_job:entrypoint",
+            "builder = e2e_mlops_demo.tasks.model_builder_task:entrypoint",
         ]
     },
     version=__version__,

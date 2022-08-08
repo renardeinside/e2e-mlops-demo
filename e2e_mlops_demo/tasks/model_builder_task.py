@@ -1,20 +1,13 @@
-from cgi import test
-import logging
-from e2e_mlops_demo.common import Task
-from e2e_mlops_demo.tasks.ml.providers import Provider, Trainer
-import pandas as pd
-import mlflow.sklearn
 import mlflow
-from hyperopt import fmin, STATUS_OK, tpe, SparkTrials, Trials
-from hyperopt.tpe import logger
-from sklearn.metrics import roc_auc_score
+import mlflow.sklearn
+import pandas as pd
+from hyperopt import fmin, tpe, SparkTrials, Trials
 
-logger = logging.getLogger("hyperopt-trainer")
-logger.setLevel(logging.INFO)
+from e2e_mlops_demo.common import Task
+from e2e_mlops_demo.providers import Provider, Trainer, DataProvider
 
 
 class ModelBuilderTask(Task):
-
     def _read_data(self) -> pd.DataFrame:
         db = self.conf["input"]["database"]
         table = self.conf["input"]["table"]
@@ -23,21 +16,27 @@ class ModelBuilderTask(Task):
         self.logger.info(f"Loaded dataset, total size: {len(_data)}")
         return _data
 
+    @staticmethod
+    def _get_trials() -> Trials:
+        return SparkTrials()
+
     def setup_mlflow(self):
         mlflow.set_experiment(self.conf["experiment"])
 
     def _train_model(self, data: pd.DataFrame):
-        trainer = Trainer(data)
-        trials = SparkTrials(1)
-        
-        best_params = fmin(
-            fn=trainer.train,
-            space=Provider.get_search_space(),
-            algo=tpe.suggest,
-            max_evals=5,
-            trials=trials
-        )
-        self.logger.info(f"Best params {best_params}")
+        self.logger.info("Starting the model training")
+        model_data = DataProvider.provide(data, self.logger)
+        with mlflow.start_run():
+            trainer = Trainer(model_data)
+            best_params = fmin(
+                fn=trainer.train,
+                space=Provider.get_search_space(),
+                algo=tpe.suggest,
+                max_evals=self.conf.get("max_evals", 20),
+                trials=self._get_trials(),
+            )
+            self.logger.info(f"Best params {best_params}")
+        self.logger.info("Model training finished")
 
     def launch(self):
         self.logger.info("Launching sample ETL job")

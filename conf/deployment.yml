@@ -24,4 +24,10 @@ environments:
             python_wheel_task:
               package_name: "e2e_mlops_demo"
               entry_point: "loader"
-              parameters: ["--conf-file", "file:fuse://conf/tasks/loader.yml"]
+              parameters: [ "--conf-file", "file:fuse://conf/tasks/loader.yml" ]
+          - task_key: "builder"
+            job_cluster_key: "default"
+            python_wheel_task:
+              package_name: "e2e_mlops_demo"
+              entry_point: "builder"
+              parameters: [ "--conf-file", "file:fuse://conf/tasks/builder.yml" ]
