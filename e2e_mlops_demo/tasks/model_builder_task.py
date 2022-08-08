@@ -4,10 +4,29 @@ import pandas as pd
 from hyperopt import fmin, tpe, SparkTrials, Trials
 
 from e2e_mlops_demo.common import Task
-from e2e_mlops_demo.providers import Provider, Trainer, DataProvider
+from e2e_mlops_demo.models import DatabricksApiInfo
+from e2e_mlops_demo.ml.provider import Provider
+from e2e_mlops_demo.ml.trainer import Trainer
 
 
 class ModelBuilderTask(Task):
+    def _get_databricks_api_info(self) -> DatabricksApiInfo:  # pragma: no cover
+        host = (
+            self.dbutils.notebook.entry_point.getDbutils()
+            .notebook()
+            .getContext()
+            .apiUrl()
+            .getOrElse(None)
+        )
+        token = (
+            self.dbutils.notebook.entry_point.getDbutils()
+            .notebook()
+            .getContext()
+            .apiToken()
+            .getOrElse(None)
+        )
+        return DatabricksApiInfo(host=host, token=token)
+
     def _read_data(self) -> pd.DataFrame:
         db = self.conf["input"]["database"]
         table = self.conf["input"]["table"]
@@ -18,16 +37,18 @@ class ModelBuilderTask(Task):
 
     @staticmethod
     def _get_trials() -> Trials:
-        return SparkTrials()
+        return SparkTrials(parallelism=2)
 
     def setup_mlflow(self):
         mlflow.set_experiment(self.conf["experiment"])
 
     def _train_model(self, data: pd.DataFrame):
         self.logger.info("Starting the model training")
-        model_data = DataProvider.provide(data, self.logger)
+        model_data = Provider.get_data(data, self.logger)
         with mlflow.start_run():
-            trainer = Trainer(model_data)
+            trainer = Trainer(
+                model_data, self.conf["experiment"], self._get_databricks_api_info()
+            )
             best_params = fmin(
                 fn=trainer.train,
                 space=Provider.get_search_space(),

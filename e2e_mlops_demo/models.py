@@ -1,3 +1,6 @@
+"""
+This module contains logical models, not the machine learning ones
+"""
 from typing import Dict, Any
 
 import pandas as pd
@@ -24,3 +27,14 @@ class TestData(FlexibleBaseModel):
 class ModelData(FlexibleBaseModel):
     train: TrainData
     test: TestData
+
+
+class DatabricksApiInfo(BaseModel):
+    host: str
+    token: str
+
+
+class MlflowInfo(BaseModel):
+    registry_uri: str
+    tracking_uri: str
+    experiment: str
