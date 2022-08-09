@@ -11,7 +11,7 @@ custom:
 
   builder-cluster: &builder-cluster
     new_cluster:
-      num_workers: 14
+      num_workers: 6
       <<: *basic-static-cluster
       # we book 8 CPUs per task so one task could fully utilise one node
       spark_conf:
@@ -70,6 +70,7 @@ environments:
             <<: *loader-task
 
       - name: "e2e-mlops-demo-builder"
+        max_concurrent_runs: 2
         job_clusters:
           - job_cluster_key: "builder-cluster"
             <<: *builder-cluster
