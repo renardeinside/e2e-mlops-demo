@@ -5,25 +5,29 @@ custom:
     spark_version: "11.1.x-cpu-ml-scala2.12"
 
   basic-static-cluster: &basic-static-cluster
-    new_cluster:
-      <<: *basic-cluster-props
-      num_workers: 1
-      instance_pool_name: "f8s-v2-pool"
-      driver_instance_pool_name: "f8s-v2-pool"
+    <<: *basic-cluster-props
+    instance_pool_name: "f8s-v2-pool"
+    driver_instance_pool_name: "f8s-v2-pool"
 
-  ml-cluster: &ml-cluster
-    <<: *basic-static-cluster
-    num_workers: 6
+  builder-cluster: &builder-cluster
+    new_cluster:
+      num_workers: 6
+      <<: *basic-static-cluster
+
+  loader-cluster: &loader-cluster
+    new_cluster:
+      num_workers: 1
+      <<: *basic-static-cluster
 
   loader-task: &loader-task
-    job_cluster_key: "default"
+    job_cluster_key: "loader-cluster"
     python_wheel_task:
       package_name: "e2e_mlops_demo"
       entry_point: "loader"
       parameters: [ "--conf-file", "file:fuse://conf/tasks/loader.yml" ]
 
   builder-task: &builder-task
-    job_cluster_key: "ml-cluster"
+    job_cluster_key: "builder-cluster"
     python_wheel_task:
       package_name: "e2e_mlops_demo"
       entry_point: "builder"
@@ -35,15 +39,15 @@ environments:
     jobs:
       - name: "e2e-mlops-demo-loader"
         job_clusters:
-          - job_cluster_key: "default"
-            <<: *basic-static-cluster
+          - job_cluster_key: "loader-cluster"
+            <<: *loader-cluster
         tasks:
           - task_key: "loader"
             <<: *loader-task
       - name: "e2e-mlops-demo-builder"
         job_clusters:
-          - job_cluster_key: "ml-cluster"
-            <<: *ml-cluster
+          - job_cluster_key: "builder-cluster"
+            <<: *builder-cluster
         tasks:
           - task_key: "builder"
             <<: *builder-task
