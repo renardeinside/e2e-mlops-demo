@@ -40,7 +40,9 @@ class Provider:
         return search_space
 
     @staticmethod
-    def get_pipeline(params: Optional[SearchSpace]) -> Pipeline:
+    def get_pipeline(params: Optional[SearchSpace] = None) -> Pipeline:
+        if not params:
+            params = {}
 
         pipeline = Pipeline(
             [
