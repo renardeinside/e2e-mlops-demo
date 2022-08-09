@@ -33,10 +33,23 @@ custom:
       entry_point: "builder"
       parameters: [ "--conf-file", "file:fuse://conf/tasks/builder.yml" ]
 
-# please note that we're using FUSE reference for config file, hence we're going to load this file using its local FS path
 environments:
   default:
     jobs:
+      - name: "e2e-mlops-demo-main"
+        job_clusters:
+          - job_cluster_key: "loader-cluster"
+            <<: *loader-cluster
+          - job_cluster_key: "builder-cluster"
+            <<: *builder-cluster
+        tasks:
+          - task_key: "loader"
+            <<: *loader-task
+          - task_key: "builder"
+            <<: *builder-task
+            depends_on:
+              - task_key: "loader"
+
       - name: "e2e-mlops-demo-loader"
         job_clusters:
           - job_cluster_key: "loader-cluster"
