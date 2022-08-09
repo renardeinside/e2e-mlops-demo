@@ -16,13 +16,16 @@ class ModelBuilderTask(Task):
         self.logger.info(f"Loaded dataset, total size: {len(_data)}")
         return _data
 
-    @staticmethod
-    def _get_trials() -> Trials:
-        return SparkTrials(parallelism=2)
+    def _get_num_executors(self) -> int:  # pragma: no cover
+        tracker = self.spark.sparkContext._jsc.sc().statusTracker()  # noqa
+        return len(tracker.getExecutorInfos()) - 1
+
+    def _get_trials(self) -> Trials:
+        return SparkTrials(parallelism=self._get_num_executors())
 
     def _train_model(self, data: pd.DataFrame):
         self.logger.info("Starting the model training")
-        model_data = Provider.get_data(data, self.logger)
+        model_data = Provider.get_data(data, self.logger, limit=self.conf.get("limit"))
         mlflow_info = EnvironmentInfoProvider.get_mlflow_info()
         trainer = Trainer(model_data, self.conf["experiment"], mlflow_info)
         trainer.train(

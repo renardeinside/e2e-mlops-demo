@@ -15,6 +15,7 @@ import mlflow
 import pandas as pd
 import pytest
 from delta import configure_spark_with_delta_pip
+from imblearn.datasets import make_imbalance
 from pyspark.sql import SparkSession
 from sklearn.datasets import make_classification
 
@@ -147,7 +148,8 @@ def dbutils_fixture() -> Iterator[None]:
 
 @pytest.fixture(scope="function")
 def dataset_fixture() -> pd.DataFrame:
-    X, y = make_classification(n_samples=100, n_classes=2)
+    X, y = make_classification(n_samples=10000, n_classes=2)
+    X, y = make_imbalance(X, y, {0: 4000, 1: 500})
     df = pd.DataFrame(X, columns=[f"v{i}" for i in range(X.shape[-1])])
     df["target"] = y
     return df

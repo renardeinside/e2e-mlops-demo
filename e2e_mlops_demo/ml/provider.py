@@ -3,11 +3,11 @@ from typing import Any, Optional
 
 import pandas as pd
 from hyperopt import hp
-from sklearn.ensemble import RandomForestClassifier
+from imblearn.over_sampling import ADASYN
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
-from imblearn.over_sampling import ADASYN
+from xgboost import XGBClassifier
 
 from e2e_mlops_demo.models import (
     SearchSpace,
@@ -26,8 +26,11 @@ class Provider:
     def get_search_space() -> SearchSpace:
         search_space = {
             "classifier": {
-                "criterion": hp.choice("criterion", ["gini", "entropy", "log_loss"]),
                 "max_depth": hp.uniformint("max_depth", 3, 10),
+                "n_estimators": hp.uniformint("n_estimators", 10, 100),
+                "learning_rate": hp.uniform("learning_rate", 0.001, 0.5),
+                "reg_alpha": hp.uniform("reg_alpha", 0.01, 0.1),
+                "base_score": hp.uniform("base_score", 0.001, 0.1)
             }
         }
         return search_space
@@ -41,16 +44,19 @@ class Provider:
                 ("scaler", StandardScaler()),
                 (
                     "classifier",
-                    RandomForestClassifier(
-                        **params.get("classifier", {}), class_weight={0: 1, 1: 100}
-                    ),
+                    XGBClassifier(**params.get("classifier", {})),
                 ),
             ]
         )
         return pipeline
 
     @classmethod
-    def get_data(cls, data: pd.DataFrame, logger: Optional[Any] = None) -> ModelData:
+    def get_data(
+        cls,
+        data: pd.DataFrame,
+        logger: Optional[Any] = None,
+        limit: Optional[int] = None,
+    ) -> ModelData:
         if not logger:
             logger = logging.getLogger(cls.__name__)
             logger.setLevel(logging.INFO)
@@ -58,22 +64,33 @@ class Provider:
         X = data.drop(columns=[cls.TARGET_COLUMN])
         y = data[cls.TARGET_COLUMN]
 
-        # oversample-sample the target class
-        X_resampled, y_resampled = ADASYN(random_state=cls.RANDOM_STATE).fit_resample(
-            X, y
-        )
-
-        # split into train test
         X_train, X_test, y_train, y_test = train_test_split(
-            X_resampled,
-            y_resampled,
+            X,
+            y,
             test_size=cls.TEST_SIZE,
             random_state=cls.RANDOM_STATE,
         )
+
+        # over-sample the target class
+        X_train, y_train = ADASYN(random_state=cls.RANDOM_STATE).fit_resample(
+            X_train, y_train
+        )
+
+        if limit:
+            X_train = X_train.head(limit)
+            y_train = y_train.head(limit)
+            X_test = X_test.head(limit)
+            y_test = y_test.head(limit)
+
+        # split into train test
         logger.info(f"Train shape: {X_train.shape}")
         logger.info(f"Test  shape: {X_test.shape}")
-        logger.info(f"target percentage in oversampled train: {y_train.sum() / len(y_train)}")
-        logger.info(f"target percentage in oversampled test: {y_train.sum() / len(y_train)}")
+        logger.info(
+            f"target percentage in oversampled train: {y_train.sum() / len(y_train)}"
+        )
+        logger.info(
+            f"target percentage in oversampled test: {y_train.sum() / len(y_train)}"
+        )
         return ModelData(
             train=TrainData(X=X_train, y=y_train), test=TestData(X=X_test, y=y_test)
         )

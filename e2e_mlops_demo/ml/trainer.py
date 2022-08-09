@@ -42,7 +42,14 @@ class Trainer:
     ) -> Tuple[Dict[str, Any], Pipeline]:
         pipeline = Provider.get_pipeline(parameters)
         pipeline.fit(self.data.train.X, self.data.train.y)
-        mlflow.log_params(pipeline.get_params())
+
+        _params = pipeline.get_params()
+        _params.pop("steps")
+
+        for step_name, _ in pipeline.steps:
+            _params.pop(step_name)
+
+        mlflow.log_params(_params)
         results = mlflow.sklearn.eval_and_log_metrics(
             pipeline, self.data.test.X, self.data.test.y, prefix="test_"
         )
@@ -78,7 +85,7 @@ class Trainer:
             artifact_path="model",
             registered_model_name=model_name,
             signature=signature,
-            code_paths=[code_path],
+            code_paths=[str(code_path)],
         )
 
     def train(self, max_evals: int, trials: Trials, model_name: str) -> None:
