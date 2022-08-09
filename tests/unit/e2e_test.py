@@ -53,7 +53,7 @@ def test_builder(spark: SparkSession, dataset_fixture: pd.DataFrame, mlflow_loca
         EnvironmentInfoProvider, "get_mlflow_info", return_value=mlflow_local
     ):
         builder = ModelBuilderTask(
-            spark, {"experiment": "test", "max_evals": 2, "model_name": "builder-test"}
+            spark, {"experiment": "test", "max_evals": 5, "model_name": "builder-test"}
         )
         builder._read_data = MagicMock(return_value=dataset_fixture)
         builder._get_trials = MagicMock(return_value=SparkTrials())

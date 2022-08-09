@@ -55,7 +55,7 @@ class Trainer:
         )
         y_pred = pipeline.predict(self.data.test.X)
         kappa = cohen_kappa_score(self.data.test.y, y_pred)
-        mlflow.log_metric("kappa", kappa)
+        mlflow.log_metric("test_kappa", kappa)
         results["test_kappa"] = kappa
         return results, pipeline
 
