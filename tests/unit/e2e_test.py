@@ -2,6 +2,7 @@ from unittest.mock import MagicMock, patch
 
 import pandas as pd
 from hyperopt import SparkTrials
+from mlflow.tracking import MlflowClient
 from pyspark.sql import SparkSession
 
 from e2e_mlops_demo.ml.provider import Provider
@@ -24,18 +25,22 @@ def test_trainer(
 ):
     model_data = Provider.get_data(dataset_fixture)
     experiment_name = "test-trainer"
+    model_name = "test-model"
     trainer = Trainer(model_data, experiment_name, mlflow_info=mlflow_local)
-    best_params = trainer.train(max_evals=2, trials=SparkTrials())
-    print(best_params)
+    trainer.train(max_evals=2, trials=SparkTrials(), model_name=model_name)
+    found_model = [
+        _m for _m in MlflowClient().list_registered_models() if _m.name == model_name
+    ]
+    assert len(found_model) == 1
 
 
 def test_builder(spark: SparkSession, dataset_fixture: pd.DataFrame, mlflow_local):
     with patch.object(
-        EnvironmentInfoProvider, "get_databricks_api_info", return_value=None
-    ), patch.object(
         EnvironmentInfoProvider, "get_mlflow_info", return_value=mlflow_local
     ):
-        builder = ModelBuilderTask(spark, {"experiment": "test", "max_evals": 2})
+        builder = ModelBuilderTask(
+            spark, {"experiment": "test", "max_evals": 2, "model_name": "builder-test"}
+        )
         builder._read_data = MagicMock(return_value=dataset_fixture)
         builder._get_trials = MagicMock(return_value=SparkTrials())
         builder.launch()

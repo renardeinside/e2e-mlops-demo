@@ -29,11 +29,6 @@ class ModelData(FlexibleBaseModel):
     test: TestData
 
 
-class DatabricksApiInfo(BaseModel):
-    host: str
-    token: str
-
-
 class MlflowInfo(BaseModel):
     registry_uri: str
     tracking_uri: str

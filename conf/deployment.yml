@@ -27,8 +27,11 @@ environments:
               parameters: [ "--conf-file", "file:fuse://conf/tasks/loader.yml" ]
           - task_key: "builder"
             job_cluster_key: "default"
-            spark_python_task:
-              python_file: "file://e2e_mlops_demo/tasks/model_builder_task.py"
-#              package_name: "e2e_mlops_demo"
-#              entry_point: "builder"
+            python_wheel_task:
+              package_name: "e2e_mlops_demo"
+              entry_point: "builder"
               parameters: [ "--conf-file", "file:fuse://conf/tasks/builder.yml" ]
+          - task_key: "test"
+            spark_python_task:
+              python_file: "file://tests/unit/hyperopt_nested_test.py"
+              parameters: []

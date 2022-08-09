@@ -7,6 +7,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from imblearn.over_sampling import ADASYN
 
 from e2e_mlops_demo.models import (
     SearchSpace,
@@ -53,16 +54,26 @@ class Provider:
         if not logger:
             logger = logging.getLogger(cls.__name__)
             logger.setLevel(logging.INFO)
+        # split into columns
         X = data.drop(columns=[cls.TARGET_COLUMN])
         y = data[cls.TARGET_COLUMN]
+
+        # oversample-sample the target class
+        X_resampled, y_resampled = ADASYN(random_state=cls.RANDOM_STATE).fit_resample(
+            X, y
+        )
+
+        # split into train test
         X_train, X_test, y_train, y_test = train_test_split(
-            X, y, stratify=y, test_size=cls.TEST_SIZE, random_state=cls.RANDOM_STATE
+            X_resampled,
+            y_resampled,
+            test_size=cls.TEST_SIZE,
+            random_state=cls.RANDOM_STATE,
         )
         logger.info(f"Train shape: {X_train.shape}")
         logger.info(f"Test  shape: {X_test.shape}")
-        logger.info(f"target percentage in train: {y_train.sum() / len(y_train)}")
-        logger.info(f"target percentage in test: {y_train.sum() / len(y_train)}")
-        logger.info(f"target percentage in dataset: {y.sum() / len(y)}")
+        logger.info(f"target percentage in oversampled train: {y_train.sum() / len(y_train)}")
+        logger.info(f"target percentage in oversampled test: {y_train.sum() / len(y_train)}")
         return ModelData(
             train=TrainData(X=X_train, y=y_train), test=TestData(X=X_test, y=y_test)
         )

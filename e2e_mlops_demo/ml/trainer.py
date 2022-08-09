@@ -1,13 +1,17 @@
-import os
+import inspect
 import tempfile
-from typing import Optional
+from pathlib import Path
+from typing import Optional, Dict, Any, Tuple
 
 import mlflow.sklearn
 from hyperopt import STATUS_OK, tpe, fmin, Trials
+from mlflow.models.signature import infer_signature
 from pyspark.cloudpickle import dump
+from sklearn.pipeline import Pipeline
 
+import e2e_mlops_demo
 from e2e_mlops_demo.ml.provider import Provider
-from e2e_mlops_demo.models import ModelData, DatabricksApiInfo, SearchSpace, MlflowInfo
+from e2e_mlops_demo.models import ModelData, SearchSpace, MlflowInfo
 
 
 class Trainer:
@@ -15,65 +19,69 @@ class Trainer:
         self,
         model_data: ModelData,
         experiment_name: str,
-        databricks_info: Optional[DatabricksApiInfo] = None,
         mlflow_info: Optional[MlflowInfo] = None,
     ):
         self.data = model_data
-        self._databricks_info = databricks_info
         self._mlflow_info = mlflow_info
-        self._experiment_id = self._get_experiment_id(experiment_name)
-        self._parent_run_id = self.initialize_parent_run()
+        self.experiment_id = self.prepare_experiment(experiment_name)
+        self.parent_run_id = self.initialize_parent_run(self.experiment_id)
         self.verify_serialization()
 
     @staticmethod
-    def _get_experiment_id(experiment_name) -> str:
-        _exp = mlflow.get_experiment_by_name(experiment_name)
-        if _exp:
-            return _exp.experiment_id
-        else:
-            return mlflow.create_experiment(experiment_name)
+    def prepare_experiment(experiment_name) -> str:
+        _exp = mlflow.set_experiment(experiment_name)
+        return _exp.experiment_id
 
-    def initialize_parent_run(self) -> str:
-        with mlflow.start_run(experiment_id=self._experiment_id) as parent_run:
+    @staticmethod
+    def initialize_parent_run(experiment_id: str) -> str:
+        with mlflow.start_run(experiment_id=experiment_id) as parent_run:
             return parent_run.info.run_id
 
-    def _setup_mlflow_auth(self):  # pragma: no cover
-        # this is required for a proper mlflow setup on the worker nodes
-        if self._databricks_info:
-            os.environ["DATABRICKS_HOST"] = self._databricks_info.host
-            os.environ["DATABRICKS_TOKEN"] = self._databricks_info.token
+    def _train_model_and_log_results(
+        self, parameters: SearchSpace
+    ) -> Tuple[Dict[str, Any], Pipeline]:
+        pipeline = Provider.get_pipeline(parameters)
+        pipeline.fit(self.data.train.X, self.data.train.y)
+        mlflow.log_params(pipeline.get_params())
+        results = mlflow.sklearn.eval_and_log_metrics(
+            pipeline, self.data.test.X, self.data.test.y, prefix="test_"
+        )
+        return results, pipeline
 
+    def setup_mlflow(self):
         if self._mlflow_info:
-            mlflow.set_registry_uri(self._mlflow_info.registry_uri)
             mlflow.set_tracking_uri(self._mlflow_info.tracking_uri)
-        else:
-            mlflow.set_registry_uri("databricks")
-            mlflow.set_tracking_uri("databricks")
+            mlflow.set_registry_uri(self._mlflow_info.registry_uri)
 
     def _objective(self, parameters: SearchSpace):
         """
         Please note that logging functionality won't work inside the training function.
         This function is running on executor instances.
         """
-        if not self._parent_run_id:
+        self.setup_mlflow()
+        if not self.parent_run_id:
             raise RuntimeError("Parent run id is not defined")
-
-        self._setup_mlflow_auth()
-
         with mlflow.start_run(
-            run_id=self._parent_run_id, experiment_id=self._experiment_id
+            run_id=self.parent_run_id, experiment_id=self.experiment_id
         ):
-            with mlflow.start_run(nested=True, experiment_id=self._experiment_id):
-                # pipeline = Provider.get_pipeline(parameters)
-                # pipeline.fit(self.data.train.X, self.data.train.y)
-                # result = mlflow.sklearn.eval_and_log_metrics(
-                #     pipeline, self.data.test.X, self.data.test.y, prefix="test_"
-                # )
-                mlflow.log_metric("test", 1)
-                # mlflow.log_params(parameters.get("classifier", {}))
-                return {"status": STATUS_OK, "loss": -1}
+            with mlflow.start_run(nested=True, experiment_id=self.experiment_id):
+                results, _ = self._train_model_and_log_results(parameters)
+                return {"status": STATUS_OK, "loss": results["test_f1_score"]}
 
-    def train(self, max_evals: int, trials: Trials):
+    def _register_model(self, model: Pipeline, model_name: str):
+        signature = infer_signature(
+            self.data.train.X, model.predict_proba(self.data.train.X)
+        )
+        code_path = Path(inspect.getfile(e2e_mlops_demo)).parent
+        mlflow.sklearn.log_model(
+            model,
+            artifact_path="model",
+            registered_model_name=model_name,
+            signature=signature,
+            code_paths=[code_path],
+        )
+
+    def train(self, max_evals: int, trials: Trials, model_name: str) -> None:
 
         best_params = fmin(
             fn=self._objective,
@@ -82,7 +90,12 @@ class Trainer:
             max_evals=max_evals,
             trials=trials,
         )
-        return best_params
+
+        with mlflow.start_run(
+            run_id=self.parent_run_id, experiment_id=self.experiment_id
+        ):
+            _, model = self._train_model_and_log_results(best_params)
+            self._register_model(model, model_name)
 
     def verify_serialization(self):
         try:

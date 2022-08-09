@@ -3,3 +3,4 @@ input:
   database: "e2e_mlops_demo"
   table: "fraud_data"
 max_evals: 5
+model_name: "e2e-mlops-demo"

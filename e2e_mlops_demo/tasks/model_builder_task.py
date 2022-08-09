@@ -23,15 +23,11 @@ class ModelBuilderTask(Task):
     def _train_model(self, data: pd.DataFrame):
         self.logger.info("Starting the model training")
         model_data = Provider.get_data(data, self.logger)
-        databricks_api_info = EnvironmentInfoProvider.get_databricks_api_info(
-            self.dbutils
-        )
         mlflow_info = EnvironmentInfoProvider.get_mlflow_info()
-        trainer = Trainer(
-            model_data, self.conf["experiment"], databricks_api_info, mlflow_info
+        trainer = Trainer(model_data, self.conf["experiment"], mlflow_info)
+        trainer.train(
+            self.conf.get("max_evals", 20), self._get_trials(), self.conf["model_name"]
         )
-        best_params = trainer.train(self.conf.get("max_evals", 20), self._get_trials())
-        self.logger.info(f"Best model params: {best_params}")
         self.logger.info("Model training finished")
 
     def launch(self):
