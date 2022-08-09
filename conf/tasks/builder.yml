@@ -2,5 +2,5 @@ experiment: "/Shared/e2e-mlops-demo"
 input:
   database: "e2e_mlops_demo"
   table: "fraud_data"
-max_evals: 50
+max_evals: 100
 model_name: "e2e-mlops-demo"

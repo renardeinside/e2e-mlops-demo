@@ -15,6 +15,7 @@ from e2e_mlops_demo.models import (
     TrainData,
     TestData,
     ModelData,
+    SourceMetadata,
 )
 
 
@@ -56,6 +57,7 @@ class Provider:
     def get_data(
         cls,
         data: pd.DataFrame,
+        source_metadata: SourceMetadata,
         logger: Optional[Any] = None,
         limit: Optional[int] = None,
     ) -> ModelData:
@@ -94,5 +96,7 @@ class Provider:
             f"target percentage in oversampled test: {y_train.sum() / len(y_train)}"
         )
         return ModelData(
-            train=TrainData(X=X_train, y=y_train), test=TestData(X=X_test, y=y_test)
+            train=TrainData(X=X_train, y=y_train),
+            test=TestData(X=X_test, y=y_test),
+            source_metadata=source_metadata,
         )

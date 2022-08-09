@@ -7,8 +7,9 @@ import mlflow.sklearn
 from hyperopt import STATUS_OK, tpe, fmin, Trials
 from mlflow.models.signature import infer_signature
 from pyspark.cloudpickle import dump
+from sklearn.metrics import cohen_kappa_score, roc_auc_score, f1_score
 from sklearn.pipeline import Pipeline
-from sklearn.metrics import cohen_kappa_score
+
 import e2e_mlops_demo
 from e2e_mlops_demo.ml.provider import Provider
 from e2e_mlops_demo.models import ModelData, SearchSpace, MlflowInfo
@@ -40,6 +41,7 @@ class Trainer:
     def _train_model_and_log_results(
         self, parameters: SearchSpace
     ) -> Tuple[Dict[str, Any], Pipeline]:
+
         pipeline = Provider.get_pipeline(parameters)
         pipeline.fit(self.data.train.X, self.data.train.y)
 
@@ -50,14 +52,27 @@ class Trainer:
             _params.pop(step_name)
 
         mlflow.log_params(_params)
-        results = mlflow.sklearn.eval_and_log_metrics(
-            pipeline, self.data.test.X, self.data.test.y, prefix="test_"
-        )
+
+        metrics = {}
+
         y_pred = pipeline.predict(self.data.test.X)
+        y_pred_proba = pipeline.predict_proba(self.data.test.X)[:, 1]
+
         kappa = cohen_kappa_score(self.data.test.y, y_pred)
-        mlflow.log_metric("test_kappa", kappa)
-        results["test_kappa"] = kappa
-        return results, pipeline
+        roc_auc = roc_auc_score(self.data.test.y, y_pred_proba)
+        f1 = f1_score(self.data.test.y, y_pred)
+
+        metrics["test_kappa"] = kappa
+        metrics["test_roc_auc"] = roc_auc
+        metrics["test_f1"] = f1
+
+        mlflow.log_metrics(metrics)
+
+        mlflow.set_tag("source.database", self.data.source_metadata.database)
+        mlflow.set_tag("source.table", self.data.source_metadata.table)
+        mlflow.set_tag("source.version", self.data.source_metadata.version)
+
+        return metrics, pipeline
 
     def setup_mlflow(self):
         if self._mlflow_info:
@@ -70,6 +85,7 @@ class Trainer:
         This function is running on executor instances.
         """
         self.setup_mlflow()
+
         if not self.parent_run_id:
             raise RuntimeError("Parent run id is not defined")
         with mlflow.start_run(
@@ -77,7 +93,7 @@ class Trainer:
         ):
             with mlflow.start_run(nested=True, experiment_id=self.experiment_id):
                 results, _ = self._train_model_and_log_results(parameters)
-                return {"status": STATUS_OK, "loss": -1 * results["test_kappa"]}
+                return {"status": STATUS_OK, "loss": -1.0 * results["test_kappa"]}
 
     def _register_model(self, model: Pipeline, model_name: str):
         signature = infer_signature(

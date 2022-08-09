@@ -1,20 +1,31 @@
+from typing import Tuple
+
 import pandas as pd
+from delta.tables import DeltaTable
 from hyperopt import SparkTrials, Trials
 
 from e2e_mlops_demo.common import Task
 from e2e_mlops_demo.ml.provider import Provider
 from e2e_mlops_demo.ml.trainer import Trainer
+from e2e_mlops_demo.models import SourceMetadata
 from e2e_mlops_demo.utils import EnvironmentInfoProvider
 
 
 class ModelBuilderTask(Task):
-    def _read_data(self) -> pd.DataFrame:
+    def _read_data(self) -> Tuple[pd.DataFrame, SourceMetadata]:
         db = self.conf["input"]["database"]
-        table = self.conf["input"]["table"]
-        self.logger.info(f"Reading dataset from {db}.{table}")
-        _data: pd.DataFrame = self.spark.table(f"{db}.{table}").toPandas()
+        table_name = self.conf["input"]["table"]
+        full_table_name = f"{db}.{table_name}"
+        table = DeltaTable.forName(self.spark, full_table_name)
+        last_version = table.history(limit=1).toPandas()["version"][0]
+        _data = self.spark.sql(
+            f"select * from {full_table_name} VERSION AS OF {last_version}"
+        ).toPandas()
         self.logger.info(f"Loaded dataset, total size: {len(_data)}")
-        return _data
+        self.logger.info(f"Dataset version: {last_version}")
+        return _data, SourceMetadata(
+            version=last_version, database=db, table=table_name
+        )
 
     def _get_num_executors(self) -> int:  # pragma: no cover
         tracker = self.spark.sparkContext._jsc.sc().statusTracker()  # noqa
@@ -23,9 +34,11 @@ class ModelBuilderTask(Task):
     def _get_trials(self) -> Trials:
         return SparkTrials(parallelism=self._get_num_executors())
 
-    def _train_model(self, data: pd.DataFrame):
+    def _train_model(self, data: pd.DataFrame, source_metadata: SourceMetadata):
         self.logger.info("Starting the model training")
-        model_data = Provider.get_data(data, self.logger, limit=self.conf.get("limit"))
+        model_data = Provider.get_data(
+            data, source_metadata, self.logger, limit=self.conf.get("limit")
+        )
         mlflow_info = EnvironmentInfoProvider.get_mlflow_info()
         trainer = Trainer(model_data, self.conf["experiment"], mlflow_info)
         trainer.train(
@@ -35,8 +48,8 @@ class ModelBuilderTask(Task):
 
     def launch(self):
         self.logger.info("Launching sample ETL job")
-        _data = self._read_data()
-        self._train_model(_data)
+        data, source_metadata = self._read_data()
+        self._train_model(data, source_metadata)
         self.logger.info("Sample ETL job finished!")
 
 

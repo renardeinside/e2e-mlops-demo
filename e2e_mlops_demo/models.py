@@ -24,9 +24,16 @@ class TestData(FlexibleBaseModel):
     y: pd.Series
 
 
+class SourceMetadata(BaseModel):
+    version: int
+    database: str
+    table: str
+
+
 class ModelData(FlexibleBaseModel):
     train: TrainData
     test: TestData
+    source_metadata: SourceMetadata
 
 
 class MlflowInfo(BaseModel):
