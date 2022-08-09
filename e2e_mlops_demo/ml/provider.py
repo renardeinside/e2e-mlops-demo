@@ -49,7 +49,7 @@ class Provider:
                 ("scaler", StandardScaler()),
                 (
                     "classifier",
-                    XGBClassifier(**params.get("classifier", {})),
+                    XGBClassifier(**params.get("classifier", {}), n_jobs=-1),
                 ),
             ]
         )

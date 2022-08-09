@@ -3,6 +3,9 @@
 custom:
   basic-cluster-props: &basic-cluster-props
     spark_version: "11.1.x-cpu-ml-scala2.12"
+    # we book 8 CPUs per task so one task could fully utilise one node
+    spark_conf:
+      "spark.task.cpus": 8
 
   basic-static-cluster: &basic-static-cluster
     <<: *basic-cluster-props
@@ -11,7 +14,7 @@ custom:
 
   builder-cluster: &builder-cluster
     new_cluster:
-      num_workers: 6
+      num_workers: 14
       <<: *basic-static-cluster
 
   loader-cluster: &loader-cluster
@@ -51,12 +54,21 @@ environments:
               - task_key: "loader"
 
       - name: "e2e-mlops-demo-loader"
+
+        permissions:
+          access_control_list:
+            - user_name: "ivan.trusov@databricks.com"
+              permission_level: "IS_OWNER"
+            - group_name: "admins"
+              permission_level: "CAN_VIEW"
+
         job_clusters:
           - job_cluster_key: "loader-cluster"
             <<: *loader-cluster
         tasks:
           - task_key: "loader"
             <<: *loader-task
+
       - name: "e2e-mlops-demo-builder"
         job_clusters:
           - job_cluster_key: "builder-cluster"
