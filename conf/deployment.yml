@@ -2,36 +2,48 @@
 # Please read YAML documentation for details on how to use substitutions and anchors.
 custom:
   basic-cluster-props: &basic-cluster-props
-    spark_version: "10.4.x-cpu-ml-scala2.12"
+    spark_version: "11.1.x-cpu-ml-scala2.12"
 
   basic-static-cluster: &basic-static-cluster
     new_cluster:
       <<: *basic-cluster-props
       num_workers: 1
-      node_type_id: "Standard_E8_v3"
+      instance_pool_name: "f8s-v2-pool"
+      driver_instance_pool_name: "f8s-v2-pool"
+
+  ml-cluster: &ml-cluster
+    <<: *basic-static-cluster
+    num_workers: 6
+
+  loader-task: &loader-task
+    job_cluster_key: "default"
+    python_wheel_task:
+      package_name: "e2e_mlops_demo"
+      entry_point: "loader"
+      parameters: [ "--conf-file", "file:fuse://conf/tasks/loader.yml" ]
+
+  builder-task: &builder-task
+    job_cluster_key: "ml-cluster"
+    python_wheel_task:
+      package_name: "e2e_mlops_demo"
+      entry_point: "builder"
+      parameters: [ "--conf-file", "file:fuse://conf/tasks/builder.yml" ]
 
 # please note that we're using FUSE reference for config file, hence we're going to load this file using its local FS path
 environments:
   default:
     jobs:
-      - name: "e2e-mlops-demo-main"
+      - name: "e2e-mlops-demo-loader"
         job_clusters:
           - job_cluster_key: "default"
             <<: *basic-static-cluster
         tasks:
           - task_key: "loader"
-            job_cluster_key: "default"
-            python_wheel_task:
-              package_name: "e2e_mlops_demo"
-              entry_point: "loader"
-              parameters: [ "--conf-file", "file:fuse://conf/tasks/loader.yml" ]
+            <<: *loader-task
+      - name: "e2e-mlops-demo-builder"
+        job_clusters:
+          - job_cluster_key: "ml-cluster"
+            <<: *ml-cluster
+        tasks:
           - task_key: "builder"
-            job_cluster_key: "default"
-            python_wheel_task:
-              package_name: "e2e_mlops_demo"
-              entry_point: "builder"
-              parameters: [ "--conf-file", "file:fuse://conf/tasks/builder.yml" ]
-          - task_key: "test"
-            spark_python_task:
-              python_file: "file://tests/unit/hyperopt_nested_test.py"
-              parameters: []
+            <<: *builder-task
