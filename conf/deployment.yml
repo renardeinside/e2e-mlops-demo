@@ -3,9 +3,6 @@
 custom:
   basic-cluster-props: &basic-cluster-props
     spark_version: "11.1.x-cpu-ml-scala2.12"
-    # we book 8 CPUs per task so one task could fully utilise one node
-    spark_conf:
-      "spark.task.cpus": 8
 
   basic-static-cluster: &basic-static-cluster
     <<: *basic-cluster-props
@@ -16,6 +13,9 @@ custom:
     new_cluster:
       num_workers: 14
       <<: *basic-static-cluster
+      # we book 8 CPUs per task so one task could fully utilise one node
+      spark_conf:
+        "spark.task.cpus": 8
 
   loader-cluster: &loader-cluster
     new_cluster:
