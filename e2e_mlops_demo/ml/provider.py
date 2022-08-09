@@ -27,8 +27,10 @@ class Provider:
     def get_search_space() -> SearchSpace:
         search_space = {
             "classifier": {
-                "max_depth": hp.choice('max_depth', np.arange(3, 10, dtype=int)),
-                "n_estimators": hp.choice('n_estimators', np.arange(10, 100, dtype=int)),
+                "max_depth": hp.choice("max_depth", np.arange(3, 10, dtype=int)),
+                "n_estimators": hp.choice(
+                    "n_estimators", np.arange(10, 100, dtype=int)
+                ),
                 "learning_rate": hp.uniform("learning_rate", 0.001, 0.5),
                 "reg_alpha": hp.uniform("reg_alpha", 0.01, 0.1),
                 "base_score": hp.uniform("base_score", 0.001, 0.1),

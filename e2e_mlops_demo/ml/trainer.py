@@ -53,7 +53,8 @@ class Trainer:
         results = mlflow.sklearn.eval_and_log_metrics(
             pipeline, self.data.test.X, self.data.test.y, prefix="test_"
         )
-        kappa = cohen_kappa_score(pipeline.predict(self.data.test.X), self.data.test.y)
+        y_pred = pipeline.predict(self.data.test.X)
+        kappa = cohen_kappa_score(self.data.test.y, y_pred)
         mlflow.log_metric("kappa", kappa)
         results["test_kappa"] = kappa
         return results, pipeline
@@ -101,9 +102,7 @@ class Trainer:
             trials=trials,
         )
 
-        best_params = {
-            "classifier": classifier_params
-        }
+        best_params = {"classifier": classifier_params}
 
         with mlflow.start_run(
             run_id=self.parent_run_id, experiment_id=self.experiment_id
