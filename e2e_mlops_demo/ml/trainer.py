@@ -8,7 +8,7 @@ from hyperopt import STATUS_OK, tpe, fmin, Trials
 from mlflow.models.signature import infer_signature
 from pyspark.cloudpickle import dump
 from sklearn.pipeline import Pipeline
-
+from sklearn.metrics import cohen_kappa_score
 import e2e_mlops_demo
 from e2e_mlops_demo.ml.provider import Provider
 from e2e_mlops_demo.models import ModelData, SearchSpace, MlflowInfo
@@ -53,6 +53,9 @@ class Trainer:
         results = mlflow.sklearn.eval_and_log_metrics(
             pipeline, self.data.test.X, self.data.test.y, prefix="test_"
         )
+        kappa = cohen_kappa_score(pipeline.predict(self.data.test.X), self.data.test.y)
+        mlflow.log_metric("kappa", kappa)
+        results["test_kappa"] = kappa
         return results, pipeline
 
     def setup_mlflow(self):
@@ -73,7 +76,7 @@ class Trainer:
         ):
             with mlflow.start_run(nested=True, experiment_id=self.experiment_id):
                 results, _ = self._train_model_and_log_results(parameters)
-                return {"status": STATUS_OK, "loss": results["test_f1_score"]}
+                return {"status": STATUS_OK, "loss": -1 * results["test_kappa"]}
 
     def _register_model(self, model: Pipeline, model_name: str):
         signature = infer_signature(
@@ -90,7 +93,7 @@ class Trainer:
 
     def train(self, max_evals: int, trials: Trials, model_name: str) -> None:
 
-        best_params = fmin(
+        classifier_params = fmin(
             fn=self._objective,
             space=Provider.get_search_space(),
             algo=tpe.suggest,
@@ -98,11 +101,15 @@ class Trainer:
             trials=trials,
         )
 
+        best_params = {
+            "classifier": classifier_params
+        }
+
         with mlflow.start_run(
             run_id=self.parent_run_id, experiment_id=self.experiment_id
         ):
-            _, model = self._train_model_and_log_results(best_params)
-            self._register_model(model, model_name)
+            _, final_model = self._train_model_and_log_results(best_params)
+            self._register_model(final_model, model_name)
 
     def verify_serialization(self):
         try:

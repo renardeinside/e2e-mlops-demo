@@ -1,6 +1,7 @@
 import logging
 from typing import Any, Optional
 
+import numpy as np
 import pandas as pd
 from hyperopt import hp
 from imblearn.over_sampling import ADASYN
@@ -26,19 +27,18 @@ class Provider:
     def get_search_space() -> SearchSpace:
         search_space = {
             "classifier": {
-                "max_depth": hp.uniformint("max_depth", 3, 10),
-                "n_estimators": hp.uniformint("n_estimators", 10, 100),
+                "max_depth": hp.choice('max_depth', np.arange(3, 10, dtype=int)),
+                "n_estimators": hp.choice('n_estimators', np.arange(10, 100, dtype=int)),
                 "learning_rate": hp.uniform("learning_rate", 0.001, 0.5),
                 "reg_alpha": hp.uniform("reg_alpha", 0.01, 0.1),
-                "base_score": hp.uniform("base_score", 0.001, 0.1)
+                "base_score": hp.uniform("base_score", 0.001, 0.1),
             }
         }
         return search_space
 
     @staticmethod
     def get_pipeline(params: Optional[SearchSpace]) -> Pipeline:
-        if params is None:
-            params = {}
+
         pipeline = Pipeline(
             [
                 ("scaler", StandardScaler()),
