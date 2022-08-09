@@ -38,7 +38,12 @@ class Provider:
         pipeline = Pipeline(
             [
                 ("scaler", StandardScaler()),
-                ("classifier", RandomForestClassifier(**params.get("classifier", {}))),
+                (
+                    "classifier",
+                    RandomForestClassifier(
+                        **params.get("classifier", {}), class_weight={0: 1, 1: 100}
+                    ),
+                ),
             ]
         )
         return pipeline

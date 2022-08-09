@@ -37,4 +37,3 @@ class DatabricksApiInfo(BaseModel):
 class MlflowInfo(BaseModel):
     registry_uri: str
     tracking_uri: str
-    experiment: str

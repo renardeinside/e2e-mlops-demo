@@ -2,10 +2,12 @@
 This conftest.py contains handy components that prepare SparkSession and other relevant objects.
 """
 
+import logging
 import os
-from pathlib import Path
 import shutil
 import tempfile
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Iterator
 from unittest.mock import patch
 
@@ -14,10 +16,9 @@ import pandas as pd
 import pytest
 from delta import configure_spark_with_delta_pip
 from pyspark.sql import SparkSession
-import logging
-from dataclasses import dataclass
-
 from sklearn.datasets import make_classification
+
+from e2e_mlops_demo.models import MlflowInfo
 
 
 @dataclass
@@ -102,7 +103,7 @@ def spark() -> SparkSession:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def mlflow_local():
+def mlflow_local() -> MlflowInfo:
     """
     This fixture provides local instance of mlflow with support for tracking and registry functions.
     After the test session:
@@ -112,12 +113,13 @@ def mlflow_local():
     """
     logging.info("Configuring local MLflow instance")
     tracking_uri = tempfile.TemporaryDirectory().name
+    tracking_uri = Path(tracking_uri).as_uri()
     registry_uri = f"sqlite:///{tempfile.TemporaryDirectory().name}"
 
-    mlflow.set_tracking_uri(Path(tracking_uri).as_uri())
+    mlflow.set_tracking_uri(tracking_uri)
     mlflow.set_registry_uri(registry_uri)
     logging.info("MLflow instance configured")
-    yield None
+    yield MlflowInfo(tracking_uri=tracking_uri, registry_uri=registry_uri)
 
     mlflow.end_run()
 

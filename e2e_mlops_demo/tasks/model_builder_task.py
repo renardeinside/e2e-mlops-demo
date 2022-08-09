@@ -1,32 +1,13 @@
-import mlflow
-import mlflow.sklearn
 import pandas as pd
-from hyperopt import fmin, tpe, SparkTrials, Trials
+from hyperopt import SparkTrials, Trials
 
 from e2e_mlops_demo.common import Task
-from e2e_mlops_demo.models import DatabricksApiInfo
 from e2e_mlops_demo.ml.provider import Provider
 from e2e_mlops_demo.ml.trainer import Trainer
+from e2e_mlops_demo.utils import EnvironmentInfoProvider
 
 
 class ModelBuilderTask(Task):
-    def _get_databricks_api_info(self) -> DatabricksApiInfo:  # pragma: no cover
-        host = (
-            self.dbutils.notebook.entry_point.getDbutils()
-            .notebook()
-            .getContext()
-            .apiUrl()
-            .getOrElse(None)
-        )
-        token = (
-            self.dbutils.notebook.entry_point.getDbutils()
-            .notebook()
-            .getContext()
-            .apiToken()
-            .getOrElse(None)
-        )
-        return DatabricksApiInfo(host=host, token=token)
-
     def _read_data(self) -> pd.DataFrame:
         db = self.conf["input"]["database"]
         table = self.conf["input"]["table"]
@@ -39,29 +20,22 @@ class ModelBuilderTask(Task):
     def _get_trials() -> Trials:
         return SparkTrials(parallelism=2)
 
-    def setup_mlflow(self):
-        mlflow.set_experiment(self.conf["experiment"])
-
     def _train_model(self, data: pd.DataFrame):
         self.logger.info("Starting the model training")
         model_data = Provider.get_data(data, self.logger)
-        with mlflow.start_run():
-            trainer = Trainer(
-                model_data, self.conf["experiment"], self._get_databricks_api_info()
-            )
-            best_params = fmin(
-                fn=trainer.train,
-                space=Provider.get_search_space(),
-                algo=tpe.suggest,
-                max_evals=self.conf.get("max_evals", 20),
-                trials=self._get_trials(),
-            )
-            self.logger.info(f"Best params {best_params}")
+        databricks_api_info = EnvironmentInfoProvider.get_databricks_api_info(
+            self.dbutils
+        )
+        mlflow_info = EnvironmentInfoProvider.get_mlflow_info()
+        trainer = Trainer(
+            model_data, self.conf["experiment"], databricks_api_info, mlflow_info
+        )
+        best_params = trainer.train(self.conf.get("max_evals", 20), self._get_trials())
+        self.logger.info(f"Best model params: {best_params}")
         self.logger.info("Model training finished")
 
     def launch(self):
         self.logger.info("Launching sample ETL job")
-        self.setup_mlflow()
         _data = self._read_data()
         self._train_model(_data)
         self.logger.info("Sample ETL job finished!")
