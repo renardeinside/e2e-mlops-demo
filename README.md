@@ -46,7 +46,7 @@ Configuration details:
 | Parameter                       | Value and comments                                                                                                  |
 |---------------------------------|---------------------------------------------------------------------------------------------------------------------|
 | Dataset size                    | 29 double columns in X, train rows: `454881`, test rows: `56962`                                                    |
-| Worker type                     | `Standard_F8s_v2` (8 cores, no GPU, [details](https://docs.microsoft.com/en-us/azure/virtual-machines/fsv2-series)) |
+| Driver and worker type          | `Standard_F8s_v2` (8 cores, no GPU, [details](https://docs.microsoft.com/en-us/azure/virtual-machines/fsv2-series)) |
 | Additional Spark Configurations | `spark.task.cpus=8` so XGBoost could fully utilise all cores (`n_jobs=-1`)                                          |
 | Total model evaluations         | 100                                                                                                                 |
 
@@ -57,8 +57,8 @@ Results:
 | 14                | 9m 54s     |
 | 10                | 11m 54s    |
 | 6                 | 16m 55s    |
-| 2                 |            |
-| 1                 |            |
+| 2                 | 43m 49s    |
+| 1                 | 1h 25m 33s |
 
 ## CI/CD setup
 
