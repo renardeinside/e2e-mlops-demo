@@ -1,10 +1,14 @@
 # E2E MLOps demo with Databricks
 
-This is the source code for this blogpost series.
+This is the source code for the E2E MLOps on Databricks blogpost series.
+
+- [Part #1. Model training](https://polarpersonal.medium.com/end-to-end-mlops-with-azure-databricks-azure-aks-and-azure-eventhubs-part-1-model-training-f191139a36db)
+- [In-progress] Part #2 - Model serving
+- [TBD] Part #3 - Model monitoring
 
 ## Local environment setup
 
-For local operations (e.g. deveopment / running tests), you'll need Python 3.9.X, `pip` and `conda` for package
+For local operations (e.g. development / running tests), you'll need Python 3.9.X, `pip` and `conda` for package
 management.
 
 1. Instantiate a local Python environment via a tool of your choice. This example is based on `conda`, but you can use
