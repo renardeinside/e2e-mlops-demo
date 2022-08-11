@@ -43,7 +43,7 @@ def get_app(model_name: Optional[str] = None) -> FastAPI:
     @app.post(
         "/invocations",
         response_model=PredictionInfo,
-        summary="predicts whenever the transaction is fraudulent or normal",
+        summary="predictions for the credit card transaction classification",
         description="""Returns predictions for the credit card transaction classification. 
         Empty values (e.g. `null`) are not allowed and won't pass the validation, resulting in status code `422`.
         """,
