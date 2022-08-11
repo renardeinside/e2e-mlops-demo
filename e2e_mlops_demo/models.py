@@ -2,10 +2,10 @@
 This module contains logical models, not the machine learning ones
 """
 import datetime as dt
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 import pandas as pd
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 SearchSpace = Dict[str, Dict[str, Any]]
 
@@ -45,4 +45,8 @@ class MlflowInfo(BaseModel):
 class PredictionInfo(BaseModel):
     value: int
     model_version: int
-    predicted_at: dt.datetime = dt.datetime.now()
+    predicted_at: Optional[dt.datetime] = None
+
+    @validator("predicted_at")
+    def provide_dt(cls, _) -> dt.datetime:
+        return dt.datetime.now()

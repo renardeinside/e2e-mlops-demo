@@ -14,10 +14,12 @@ from e2e_mlops_demo.serving._types import get_pydantic_model
 
 def load_model(model_name: str) -> tuple[PyFuncModel, ModelVersion]:
     _client = MlflowClient()
-    _versions = _client.get_latest_versions(model_name)
+    _model = _client.get_registered_model(model_name)
+    _versions = _model.latest_versions
 
     if not _versions:
         raise Exception(f"No versions for model {model_name} were found!")
+
     latest_version = _versions[-1]
 
     full_model_uri = f"models:/{model_name}/{latest_version.version}"
@@ -37,7 +39,14 @@ def get_app(model_name: Optional[str] = None) -> FastAPI:
     PayloadModel = get_pydantic_model(model.metadata.get_input_schema(), "Payload")
     app = FastAPI()
 
-    @app.post("/invocations")
+    @app.post(
+        "/invocations",
+        response_model=PredictionInfo,
+        summary="predicts if transaction is fraudulent or normal",
+        description="""Returns predictions for the credit card transaction classification.
+        Please note that all parameters shall be provided in the request body, empty values are not allowed.
+        """,
+    )
     def invoke(payload: PayloadModel) -> PredictionInfo:
         _value = model.predict([payload.dict()])[0]
         return PredictionInfo(value=_value, model_version=version_info.version)

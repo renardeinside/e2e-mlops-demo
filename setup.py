@@ -9,14 +9,17 @@ from setuptools import find_packages, setup
 from e2e_mlops_demo import __version__
 
 PACKAGE_REQUIREMENTS = [
-    "PyYAML",
-    "openml",
-    "hyperopt",
+    "PyYAML",  # reading configs
+    "openml",  # loading source data
+    # serving and logical components
     "pydantic",
-    "imbalanced-learn",
-    "xgboost",
     "uvicorn[standard]",
     "fastapi",
+    # ml and training
+    "hyperopt",
+    "imbalanced-learn",
+    "xgboost==1.5.2",
+    "scikit-learn==0.24.2",
 ]
 
 DEV_REQUIREMENTS = [
@@ -29,7 +32,6 @@ DEV_REQUIREMENTS = [
     "dbx",
     "mlflow",
     "delta-spark",
-    "scikit-learn",
     "pandas",
 ]
 
