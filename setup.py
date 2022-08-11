@@ -15,6 +15,8 @@ PACKAGE_REQUIREMENTS = [
     "pydantic",
     "imbalanced-learn",
     "xgboost",
+    "uvicorn[standard]",
+    "fastapi",
 ]
 
 DEV_REQUIREMENTS = [

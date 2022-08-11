@@ -35,6 +35,11 @@ class Trainer:
 
     @staticmethod
     def initialize_parent_run(experiment_id: str) -> str:
+        # this is a fail-safe switch for cases an active run is already provided in environment
+        _active_run = mlflow.active_run()
+        if _active_run:
+            mlflow.end_run()
+
         with mlflow.start_run(experiment_id=experiment_id) as parent_run:
             return parent_run.info.run_id
 
@@ -95,7 +100,7 @@ class Trainer:
                 results, _ = self._train_model_and_log_results(parameters)
                 return {"status": STATUS_OK, "loss": -1.0 * results["test_kappa"]}
 
-    def _register_model(self, model: Pipeline, model_name: str):
+    def register_model(self, model: Pipeline, model_name: str):
         signature = infer_signature(
             self.data.train.X, model.predict_proba(self.data.train.X)
         )
@@ -124,7 +129,7 @@ class Trainer:
             run_id=self.parent_run_id, experiment_id=self.experiment_id
         ):
             _, final_model = self._train_model_and_log_results(best_params)
-            self._register_model(final_model, model_name)
+            self.register_model(final_model, model_name)
 
     def verify_serialization(self):
         try:

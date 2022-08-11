@@ -1,6 +1,7 @@
 """
 This module contains logical models, not the machine learning ones
 """
+import datetime as dt
 from typing import Dict, Any
 
 import pandas as pd
@@ -39,3 +40,9 @@ class ModelData(FlexibleBaseModel):
 class MlflowInfo(BaseModel):
     registry_uri: str
     tracking_uri: str
+
+
+class PredictionInfo(BaseModel):
+    value: int
+    model_version: int
+    predicted_at: dt.datetime = dt.datetime.now()

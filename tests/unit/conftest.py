@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator
 from unittest.mock import patch
+from uuid import uuid4
 
 import mlflow
 import pandas as pd
@@ -19,7 +20,9 @@ from imblearn.datasets import make_imbalance
 from pyspark.sql import SparkSession
 from sklearn.datasets import make_classification
 
-from e2e_mlops_demo.models import MlflowInfo
+from e2e_mlops_demo.ml.provider import Provider
+from e2e_mlops_demo.ml.trainer import Trainer
+from e2e_mlops_demo.models import MlflowInfo, SourceMetadata
 
 
 @dataclass
@@ -153,3 +156,24 @@ def dataset_fixture() -> pd.DataFrame:
     df = pd.DataFrame(X, columns=[f"v{i}" for i in range(X.shape[-1])])
     df["target"] = y
     return df
+
+
+@pytest.fixture(scope="function")
+def model_fixture(
+    spark: SparkSession, dataset_fixture: pd.DataFrame, mlflow_local: MlflowInfo
+) -> str:
+    logging.info(
+        f"Preparing model instance in mlflow registry {mlflow_local.registry_uri}"
+    )
+    model_data = Provider.get_data(
+        dataset_fixture, SourceMetadata(version=0, database="db", table="table")
+    )
+
+    experiment_name = "test-trainer"
+    model_name = f"test-model-{uuid4()}"
+    trainer = Trainer(model_data, experiment_name, mlflow_local)
+    _test_model = Provider.get_pipeline({})
+    _test_model.fit(model_data.train.X, model_data.train.y)
+    trainer.register_model(_test_model, model_name)
+    logging.info(f"Model with name {model_name} is registered in Model Registry")
+    yield model_name
