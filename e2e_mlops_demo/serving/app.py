@@ -10,6 +10,7 @@ from mlflow.tracking import MlflowClient
 
 from e2e_mlops_demo.models import PredictionInfo
 from e2e_mlops_demo.serving._types import get_pydantic_model
+from e2e_mlops_demo import __version__
 
 
 def load_model(model_name: str) -> tuple[PyFuncModel, ModelVersion]:
@@ -37,14 +38,14 @@ def get_app(model_name: Optional[str] = None) -> FastAPI:
         model_name = os.environ["MODEL_NAME"]
     model, version_info = load_model(model_name)
     PayloadModel = get_pydantic_model(model.metadata.get_input_schema(), "Payload")
-    app = FastAPI()
+    app = FastAPI(title="Credit Card Transactions Classifier 🚀", version=__version__)
 
     @app.post(
         "/invocations",
         response_model=PredictionInfo,
-        summary="predicts if transaction is fraudulent or normal",
-        description="""Returns predictions for the credit card transaction classification.
-        Please note that all parameters shall be provided in the request body, empty values are not allowed.
+        summary="predicts whenever the transaction is fraudulent or normal",
+        description="""Returns predictions for the credit card transaction classification. 
+        Empty values (e.g. `null`) are not allowed and won't pass the validation, resulting in status code `422`.
         """,
     )
     def invoke(payload: PayloadModel) -> PredictionInfo:
