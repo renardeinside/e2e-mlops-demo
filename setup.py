@@ -19,13 +19,10 @@ PACKAGE_REQUIREMENTS = [
     # ml and training
     "hyperopt",
     "imbalanced-learn==0.9.1",
-    "xgboost",
     "scikit-learn==1.1.2",
     "mlflow==1.27.0",
     "threadpoolctl==2.2.0",
     "xgboost==1.5.2",
-    "scipy==1.7.1",
-    "numpy==1.20.3"
 ]
 
 DEV_REQUIREMENTS = [
