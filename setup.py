@@ -17,9 +17,11 @@ PACKAGE_REQUIREMENTS = [
     "fastapi",
     # ml and training
     "hyperopt",
-    "imbalanced-learn",
-    "xgboost==1.5.2",
-    "scikit-learn==0.24.2",
+    "imbalanced-learn==0.9.1",
+    "xgboost==1.6.1",
+    "scikit-learn==1.1.2",
+    "mlflow==1.27.0",
+    "numpy==1.22.4",
 ]
 
 DEV_REQUIREMENTS = [
@@ -30,7 +32,6 @@ DEV_REQUIREMENTS = [
     "pytest",
     "pytest-cov",
     "dbx",
-    "mlflow",
     "delta-spark",
     "pandas",
 ]

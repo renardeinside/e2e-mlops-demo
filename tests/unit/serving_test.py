@@ -10,7 +10,7 @@ def test_load(model_fixture: str, dataset_fixture):
     app = get_app(model_fixture)
     client = TestClient(app)
     response = client.post(
-        "/invocations",
+        "/latest/invocations",
         json=dataset_fixture.head(1).T.squeeze().to_dict(),
     )
     assert response.status_code == HTTPStatus.OK
