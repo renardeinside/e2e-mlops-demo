@@ -1,55 +1,40 @@
 import os
-import tempfile
-from typing import Optional, List
+from typing import Optional
 
-import mlflow.sklearn
-from fastapi import FastAPI
-from fastapi_versioning import VersionedFastAPI, version
-
-from mlflow.entities.model_registry import ModelVersion
+from fastapi import FastAPI, APIRouter
 from mlflow.pyfunc import PyFuncModel
-from mlflow.tracking import MlflowClient
 
-from e2e_mlops_demo.models import PredictionInfo
-from e2e_mlops_demo.serving._types import get_pydantic_model
 from e2e_mlops_demo import __version__
+from e2e_mlops_demo.models import PredictionInfo
+from e2e_mlops_demo.serving._loader import get_model_versions, load_model
+from e2e_mlops_demo.serving._types import get_pydantic_model
 
 
-def get_model_versions(model_name: str) -> List[ModelVersion]:
-    _client = MlflowClient()
-    all_versions = _client.search_model_versions(f"name = '{model_name}'")
+def prepare_router(
+    model: PyFuncModel, version: int, version_name: Optional[str] = None
+) -> APIRouter:
+    if not version_name:
+        version_name = f"v{version}"
 
-    if not all_versions:
-        raise Exception(f"No versions for model {model_name} were found!")
+    router = APIRouter(prefix=f"/{version_name}", tags=[version_name])
 
-    requested_versions_string = os.environ.get("MODEL_VERSIONS")
+    PayloadModel = get_pydantic_model(
+        model.metadata.get_input_schema(), f"Payload{version_name.capitalize()}"
+    )
 
-    if not requested_versions_string:
-        _version = max(all_versions, key=lambda v: int(v.version))
-        return [_version]
-    else:
-        requested_versions = [int(v) for v in requested_versions_string.split(",")]
-        prepared_versions = []
-        for req_v in requested_versions:
-            if req_v not in [v.version for v in all_versions]:
-                raise Exception(
-                    f"Requested model version {req_v} doesn't exist in registry"
-                )
-            else:
-                _v = [v for v in all_versions if v.version == req_v][0]
-                prepared_versions.append(_v)
-        return prepared_versions
+    @router.post(
+        "/invocations",
+        response_model=PredictionInfo,
+        summary="predictions for the credit card transaction classification",
+        description="""Returns predictions for the credit card transaction classification. 
+            Empty values (e.g. `null`) are not allowed and won't pass the validation, resulting in status code `422`.
+            """,
+    )
+    def invoke(payload: PayloadModel) -> PredictionInfo:
+        _value = model.predict([payload.dict()])[0]
+        return PredictionInfo(value=_value, model_version=version)
 
-
-def load_model(
-    model_name: str, model_version: ModelVersion
-) -> tuple[PyFuncModel, ModelVersion]:
-    full_model_uri = f"models:/{model_name}/{model_version.version}"
-    with tempfile.TemporaryDirectory() as temp_dir:
-        return (
-            mlflow.pyfunc.load_model(full_model_uri, temp_dir + "/model"),
-            model_version,
-        )
+    return router
 
 
 def get_app(model_name: Optional[str] = None) -> FastAPI:
@@ -58,26 +43,24 @@ def get_app(model_name: Optional[str] = None) -> FastAPI:
             raise Exception("Please provide model name to serve")
         model_name = os.environ["MODEL_NAME"]
 
-    app = FastAPI(title="Credit Card Transactions Classifier 🚀", version=__version__)
-    versions = get_model_versions(model_name)
-    for _version in versions:
-        model, version_info = load_model(model_name, _version)
-        PayloadModel = get_pydantic_model(model.metadata.get_input_schema(), "Payload")
-
-        @app.post(
-            "/invocations",
-            response_model=PredictionInfo,
-            summary="predictions for the credit card transaction classification",
-            description="""Returns predictions for the credit card transaction classification. 
-            Empty values (e.g. `null`) are not allowed and won't pass the validation, resulting in status code `422`.
-            """,
-        )
-        @version(_version.version)
-        def invoke(payload: PayloadModel) -> PredictionInfo:
-            _value = model.predict([payload.dict()])[0]
-            return PredictionInfo(value=_value, model_version=version_info.version)
-
-    app = VersionedFastAPI(
-        app, version_format="{major}", prefix_format="/v{major}", enable_latest=True
+    app = FastAPI(
+        title="Credit Card Transactions Classifier 🚀",
+        version=__version__,
+        description="Please check the relevant model version API for the schema description.",
     )
+    versions = get_model_versions(model_name)
+
+    loaded_models = {int(v.version): load_model(model_name, v) for v in versions}
+
+    for _version, model in loaded_models.items():
+        router = prepare_router(model, _version)
+        app.include_router(router)
+
+    _latest_version = max(loaded_models)
+    _latest_model = loaded_models.get(_latest_version)
+    latest_router = prepare_router(
+        _latest_model, _latest_version, version_name="latest"
+    )
+    app.include_router(latest_router)
+
     return app

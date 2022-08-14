@@ -15,7 +15,6 @@ PACKAGE_REQUIREMENTS = [
     "pydantic",
     "uvicorn[standard]",
     "fastapi",
-    "fastapi_versioning",
     # ml and training
     "hyperopt",
     "imbalanced-learn==0.9.1",

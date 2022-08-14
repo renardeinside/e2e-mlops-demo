@@ -9,12 +9,13 @@ export PYSPARK_DRIVER_PYTHON=$(PYTHON_ENTRYPOINT)
 export MLFLOW_TRACKING_URI=databricks://e2e-mlops-demo
 export MLFLOW_REGISTRY_URI=databricks://e2e-mlops-demo
 export MODEL_NAME=e2e-mlops-demo
+export MODEL_VERSIONS=27,28
 
 test:
 	pytest tests/unit $(ARGS)
 
 serve:
-	uvicorn e2e_mlops_demo.serving.app:get_app --factory
+	uvicorn e2e_mlops_demo.serving.app:get_app --factory --log-level=debug
 
 entry:
 	python
