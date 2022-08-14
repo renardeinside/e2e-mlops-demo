@@ -9,11 +9,11 @@ LOGGING_CONFIG = {
     "version": 1,
     "formatters": {
         "default": {
-            "()": uvicorn.logging.DefaultFormatter,
+            "()": uvicorn.logging.DefaultFormatter,  # noqa
             "format": LOGGING_FORMAT,
         },
         "access": {
-            "()": uvicorn.logging.AccessFormatter,
+            "()": uvicorn.logging.AccessFormatter,  # noqa
             "format": LOGGING_FORMAT,
         },
         "basic": {

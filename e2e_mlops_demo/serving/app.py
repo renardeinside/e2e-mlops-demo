@@ -6,7 +6,7 @@ from fastapi import FastAPI, APIRouter
 from mlflow.pyfunc import PyFuncModel
 
 from e2e_mlops_demo import __version__
-from e2e_mlops_demo.config import configure_logger, LOGGING_CONFIG
+from e2e_mlops_demo.logging import configure_logger, LOGGING_CONFIG
 from e2e_mlops_demo.models import PredictionInfo
 from e2e_mlops_demo.reporting import Reporter, LoggingReporter
 from e2e_mlops_demo.serving._loader import get_model_versions, load_model

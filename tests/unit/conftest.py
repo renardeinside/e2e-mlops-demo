@@ -88,7 +88,7 @@ def dataset_fixture() -> pd.DataFrame:
 
 @pytest.fixture(scope="function")
 def model_fixture(
-        spark: SparkSession, dataset_fixture: pd.DataFrame, mlflow_local: MlflowInfo
+    spark: SparkSession, dataset_fixture: pd.DataFrame, mlflow_local: MlflowInfo
 ) -> str:
     logging.info(
         f"Preparing model instance in mlflow registry {mlflow_local.registry_uri}"
