@@ -47,6 +47,9 @@ class PredictionInfo(BaseModel):
     model_version: int
     predicted_at: Optional[dt.datetime] = None
 
-    @validator("predicted_at")
+    @validator("predicted_at", pre=True, always=True)
     def provide_dt(cls, _) -> dt.datetime:
         return dt.datetime.now()
+
+    class Config:
+        json_encoders = {dt.datetime: lambda v: v.isoformat()}

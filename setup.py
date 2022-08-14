@@ -15,6 +15,8 @@ PACKAGE_REQUIREMENTS = [
     "pydantic",
     "uvicorn[standard]",
     "fastapi",
+    # monitoring
+    "kafka-python",
     # ml and training
     "hyperopt",
     "imbalanced-learn==0.9.1",
@@ -46,6 +48,7 @@ setup(
         "console_scripts": [
             "loader = e2e_mlops_demo.tasks.dataset_loader_task:entrypoint",
             "builder = e2e_mlops_demo.tasks.model_builder_task:entrypoint",
+            "serve = e2e_mlops_demo.serving.app:entrypoint",
         ]
     },
     version=__version__,

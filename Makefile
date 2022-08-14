@@ -15,7 +15,7 @@ test:
 	pytest tests/unit $(ARGS)
 
 serve:
-	uvicorn e2e_mlops_demo.serving.app:get_app --factory --log-level=debug
+	serve
 
 entry:
 	python
