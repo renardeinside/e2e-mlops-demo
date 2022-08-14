@@ -20,5 +20,3 @@ serve-locally:
 entry:
 	python
 
-build-docker-dev:
-	docker build -t e2e-mlops-demo -f docker/Dockerfile.dev .

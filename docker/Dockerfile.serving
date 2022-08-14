@@ -6,6 +6,6 @@ COPY . .
 
 RUN --mount=type=cache,target=/root/.cache pip install -e .
 
-CMD ["uvicorn", "e2e_mlops_demo.serving.app:get_app", "--factory", "--host", "0.0.0.0", "--port", "80"]
+CMD ["serve"]
 
 
