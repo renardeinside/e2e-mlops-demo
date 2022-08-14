@@ -19,8 +19,5 @@ _COL_TYPE_MAPPING = {
 
 
 def get_pydantic_model(schema: Schema, name: str) -> BaseModel:
-    fields = {
-        item["name"]: (_COL_TYPE_MAPPING[item["type"]], ...)
-        for item in schema.to_dict()
-    }
+    fields = {item["name"]: (_COL_TYPE_MAPPING[item["type"]], ...) for item in schema.to_dict()}
     return pydantic.create_model(name, **fields)

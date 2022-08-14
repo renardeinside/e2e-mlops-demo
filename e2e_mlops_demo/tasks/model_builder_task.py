@@ -18,14 +18,10 @@ class ModelBuilderTask(Task):
         full_table_name = f"{db}.{table_name}"
         table = DeltaTable.forName(self.spark, full_table_name)
         last_version = table.history(limit=1).toPandas()["version"][0]
-        _data = self.spark.sql(
-            f"select * from {full_table_name} VERSION AS OF {last_version}"
-        ).toPandas()
+        _data = self.spark.sql(f"select * from {full_table_name} VERSION AS OF {last_version}").toPandas()
         self.logger.info(f"Loaded dataset, total size: {len(_data)}")
         self.logger.info(f"Dataset version: {last_version}")
-        return _data, SourceMetadata(
-            version=last_version, database=db, table=table_name
-        )
+        return _data, SourceMetadata(version=last_version, database=db, table=table_name)
 
     def _get_num_executors(self) -> int:  # pragma: no cover
         tracker = self.spark.sparkContext._jsc.sc().statusTracker()  # noqa
@@ -36,14 +32,10 @@ class ModelBuilderTask(Task):
 
     def _train_model(self, data: pd.DataFrame, source_metadata: SourceMetadata):
         self.logger.info("Starting the model training")
-        model_data = Provider.get_data(
-            data, source_metadata, self.logger, limit=self.conf.get("limit")
-        )
+        model_data = Provider.get_data(data, source_metadata, self.logger, limit=self.conf.get("limit"))
         mlflow_info = EnvironmentInfoProvider.get_mlflow_info()
         trainer = Trainer(model_data, self.conf["experiment"], mlflow_info)
-        trainer.train(
-            self.conf.get("max_evals", 20), self._get_trials(), self.conf["model_name"]
-        )
+        trainer.train(self.conf.get("max_evals", 20), self._get_trials(), self.conf["model_name"])
         self.logger.info("Model training finished")
 
     def launch(self):

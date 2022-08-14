@@ -43,9 +43,7 @@ class Trainer:
         with mlflow.start_run(experiment_id=experiment_id) as parent_run:
             return parent_run.info.run_id
 
-    def _train_model_and_log_results(
-        self, parameters: SearchSpace
-    ) -> Tuple[Dict[str, Any], Pipeline]:
+    def _train_model_and_log_results(self, parameters: SearchSpace) -> Tuple[Dict[str, Any], Pipeline]:
 
         pipeline = Provider.get_pipeline(parameters)
         pipeline.fit(self.data.train.X, self.data.train.y)
@@ -93,17 +91,13 @@ class Trainer:
 
         if not self.parent_run_id:
             raise RuntimeError("Parent run id is not defined")
-        with mlflow.start_run(
-            run_id=self.parent_run_id, experiment_id=self.experiment_id
-        ):
+        with mlflow.start_run(run_id=self.parent_run_id, experiment_id=self.experiment_id):
             with mlflow.start_run(nested=True, experiment_id=self.experiment_id):
                 results, _ = self._train_model_and_log_results(parameters)
                 return {"status": STATUS_OK, "loss": -1.0 * results["test_kappa"]}
 
     def register_model(self, model: Pipeline, model_name: str):
-        signature = infer_signature(
-            self.data.train.X, model.predict_proba(self.data.train.X)
-        )
+        signature = infer_signature(self.data.train.X, model.predict_proba(self.data.train.X))
         code_path = Path(inspect.getfile(e2e_mlops_demo)).parent
         mlflow.sklearn.log_model(
             model,
@@ -125,9 +119,7 @@ class Trainer:
 
         best_params = {"classifier": classifier_params}
 
-        with mlflow.start_run(
-            run_id=self.parent_run_id, experiment_id=self.experiment_id
-        ):
+        with mlflow.start_run(run_id=self.parent_run_id, experiment_id=self.experiment_id):
             _, final_model = self._train_model_and_log_results(best_params)
             self.register_model(final_model, model_name)
 

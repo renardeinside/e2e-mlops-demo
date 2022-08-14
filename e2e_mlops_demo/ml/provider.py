@@ -29,9 +29,7 @@ class Provider:
         search_space = {
             "classifier": {
                 "max_depth": hp.choice("max_depth", np.arange(3, 10, dtype=int)),
-                "n_estimators": hp.choice(
-                    "n_estimators", np.arange(10, 100, dtype=int)
-                ),
+                "n_estimators": hp.choice("n_estimators", np.arange(10, 100, dtype=int)),
                 "learning_rate": hp.uniform("learning_rate", 0.001, 0.5),
                 "reg_alpha": hp.uniform("reg_alpha", 0.01, 0.1),
                 "base_score": hp.uniform("base_score", 0.001, 0.1),
@@ -78,9 +76,7 @@ class Provider:
         )
 
         # over-sample the target class
-        X_train, y_train = ADASYN(random_state=cls.RANDOM_STATE).fit_resample(
-            X_train, y_train
-        )
+        X_train, y_train = ADASYN(random_state=cls.RANDOM_STATE).fit_resample(X_train, y_train)
 
         if limit:
             X_train = X_train.head(limit)
@@ -91,12 +87,8 @@ class Provider:
         # split into train test
         logger.info(f"Train shape: {X_train.shape}")
         logger.info(f"Test  shape: {X_test.shape}")
-        logger.info(
-            f"target percentage in oversampled train: {y_train.sum() / len(y_train)}"
-        )
-        logger.info(
-            f"target percentage in oversampled test: {y_train.sum() / len(y_train)}"
-        )
+        logger.info(f"target percentage in oversampled train: {y_train.sum() / len(y_train)}")
+        logger.info(f"target percentage in oversampled test: {y_train.sum() / len(y_train)}")
         return ModelData(
             train=TrainData(X=X_train, y=y_train),
             test=TestData(X=X_test, y=y_test),

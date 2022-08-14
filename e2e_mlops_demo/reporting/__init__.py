@@ -18,9 +18,9 @@ class Reporter(ABC):
         """"""
 
     @staticmethod
-    def _serialize_payload(event_type: str, payload: BaseModel) -> str:
+    def _serialize_payload(event_type: str, payload: BaseModel) -> bytes:
         _wrapped = PayloadWithEventType(event_type=event_type, payload=payload)
-        return _wrapped.json()
+        return _wrapped.json().encode("utf-8")
 
 
 class KafkaReporter(Reporter):

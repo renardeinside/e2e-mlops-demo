@@ -13,12 +13,8 @@ from e2e_mlops_demo.tasks.model_builder_task import ModelBuilderTask
 from e2e_mlops_demo.utils import EnvironmentInfoProvider
 
 
-def test_trainer_trials(
-    spark: SparkSession, dataset_fixture: pd.DataFrame, mlflow_local: MlflowInfo
-):
-    model_data = Provider.get_data(
-        dataset_fixture, SourceMetadata(version=0, database="db", table="table")
-    )
+def test_trainer_trials(spark: SparkSession, dataset_fixture: pd.DataFrame, mlflow_local: MlflowInfo):
+    model_data = Provider.get_data(dataset_fixture, SourceMetadata(version=0, database="db", table="table"))
 
     def custom_search_space():
         search_space = {
@@ -33,22 +29,14 @@ def test_trainer_trials(
     experiment_name = "test-trainer"
     model_name = "test-model"
     trainer = Trainer(model_data, experiment_name, mlflow_local)
-    trainer.train(
-        max_evals=2, trials=SparkTrials(1, spark_session=spark), model_name=model_name
-    )
-    found_model = [
-        _m for _m in MlflowClient().list_registered_models() if _m.name == model_name
-    ]
+    trainer.train(max_evals=2, trials=SparkTrials(1, spark_session=spark), model_name=model_name)
+    found_model = [_m for _m in MlflowClient().list_registered_models() if _m.name == model_name]
     assert len(found_model) == 1
 
 
 def test_builder(spark: SparkSession, dataset_fixture: pd.DataFrame, mlflow_local):
-    with patch.object(
-        EnvironmentInfoProvider, "get_mlflow_info", return_value=mlflow_local
-    ):
-        builder = ModelBuilderTask(
-            spark, {"experiment": "test", "max_evals": 5, "model_name": "builder-test"}
-        )
+    with patch.object(EnvironmentInfoProvider, "get_mlflow_info", return_value=mlflow_local):
+        builder = ModelBuilderTask(spark, {"experiment": "test", "max_evals": 5, "model_name": "builder-test"})
         builder._read_data = MagicMock(
             return_value=(
                 dataset_fixture,

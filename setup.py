@@ -29,11 +29,12 @@ PACKAGE_REQUIREMENTS = [
 DEV_REQUIREMENTS = [
     "setuptools",
     "wheel",
-    "pyspark",
+    "pyspark==3.2.2",
     "pyyaml",
     "pytest",
     "pytest-cov",
     "coverage[toml]",
+    "pytest-docker",
     "dbx",
     "delta-spark",
     "pandas",

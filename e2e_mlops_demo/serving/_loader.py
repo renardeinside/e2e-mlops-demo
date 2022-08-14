@@ -24,9 +24,7 @@ def get_model_versions(model_name: str) -> List[ModelVersion]:
         prepared_versions = []
         for req_v in requested_versions:
             if req_v not in [int(v.version) for v in all_versions]:
-                raise Exception(
-                    f"Requested model version {req_v} doesn't exist in registry"
-                )
+                raise Exception(f"Requested model version {req_v} doesn't exist in registry")
             else:
                 _v = [v for v in all_versions if int(v.version) == req_v][0]
                 prepared_versions.append(_v)

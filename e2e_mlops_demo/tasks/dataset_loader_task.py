@@ -9,9 +9,7 @@ from e2e_mlops_demo.common import Task
 class DatasetLoaderTask(Task):
     def get_data(self, limit: Optional[int] = None) -> PandasDataFrame:
         self.logger.info("Loading the dataset")
-        dataset = openml.datasets.get_dataset(
-            "CreditCardFraudDetection", download_qualities=False
-        )
+        dataset = openml.datasets.get_dataset("CreditCardFraudDetection", download_qualities=False)
         X, y, _, _ = dataset.get_data(dataset_format="dataframe")
         _df = X
         # sanitize column names
@@ -38,15 +36,9 @@ class DatasetLoaderTask(Task):
 
     def save_data(self, df: PandasDataFrame):
         full_table_name = self.get_output_table_name()
-        self.logger.info(
-            f"Saving data to {full_table_name}. Existing data will be overwritten"
-        )
+        self.logger.info(f"Saving data to {full_table_name}. Existing data will be overwritten")
         sdf = self.spark.createDataFrame(df)
-        writer = (
-            sdf.write.format("delta")
-            .mode("overwrite")
-            .option("overwriteSchema", "true")
-        )
+        writer = sdf.write.format("delta").mode("overwrite").option("overwriteSchema", "true")
         writer.saveAsTable(full_table_name)
         self.logger.info("Data saved successfully!")
 

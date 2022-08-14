@@ -24,15 +24,11 @@ def prepare_router(
     if not version_name:
         version_name = f"v{version}"
 
-    logger.info(
-        f"Preparing router for model version {version} with name {version_name}"
-    )
+    logger.info(f"Preparing router for model version {version} with name {version_name}")
 
     router = APIRouter(prefix=f"/{version_name}", tags=[version_name])
 
-    PayloadModel = get_pydantic_model(
-        model.metadata.get_input_schema(), f"Payload{version_name.capitalize()}"
-    )
+    PayloadModel = get_pydantic_model(model.metadata.get_input_schema(), f"Payload{version_name.capitalize()}")
 
     @router.post(
         "/invocations",
@@ -49,9 +45,7 @@ def prepare_router(
         reporter.report("prediction", _prediction)
         return _prediction
 
-    logger.info(
-        f"Preparing router for model version {version} with name {version_name} - done"
-    )
+    logger.info(f"Preparing router for model version {version} with name {version_name} - done")
     return router
 
 
@@ -84,9 +78,7 @@ def get_app(
 
     _latest_version = max(loaded_models)
     _latest_model = loaded_models.get(_latest_version)
-    latest_router = prepare_router(
-        _latest_model, _latest_version, version_name="latest", reporter=reporter
-    )
+    latest_router = prepare_router(_latest_model, _latest_version, version_name="latest", reporter=reporter)
     app.include_router(latest_router)
 
     return app
