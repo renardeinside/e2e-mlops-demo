@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 import pytest
@@ -20,6 +21,9 @@ def docker_compose_file():
 
 @pytest.fixture(scope="session")
 def kafka_fixture(docker_ip, docker_services) -> str:
+    # mute kafka logger a little bit
+    kafka_logger = logging.getLogger("kafka")
+    kafka_logger.setLevel(logging.ERROR)
     # `port_for` takes a container port and returns the corresponding host port
     port = docker_services.port_for("kafka", 9092)
     bootstrap_servers = f"localhost:{port}"
