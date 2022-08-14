@@ -16,7 +16,6 @@ def get_model_versions(model_name: str) -> List[ModelVersion]:
         raise Exception(f"No versions for model {model_name} were found!")
 
     requested_versions_string = os.environ.get("MODEL_VERSIONS")
-
     if not requested_versions_string:
         _version = max(all_versions, key=lambda v: int(v.version))
         return [_version]

@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Optional
 
@@ -24,6 +25,10 @@ def prepare_router(
     if not version_name:
         version_name = f"v{version}"
 
+    logger.info(
+        f"Preparing router for model version {version} with name {version_name}"
+    )
+
     router = APIRouter(prefix=f"/{version_name}", tags=[version_name])
 
     PayloadModel = get_pydantic_model(
@@ -45,6 +50,9 @@ def prepare_router(
         reporter.report("prediction", _prediction)
         return _prediction
 
+    logger.info(
+        f"Preparing router for model version {version} with name {version_name} - done"
+    )
     return router
 
 
@@ -57,6 +65,7 @@ def get_app(
             raise Exception("Please provide model name to serve")
         model_name = os.environ["MODEL_NAME"]
 
+    logger.info(f"Starting the serving application for model {model_name}")
     app = FastAPI(
         title="Credit Card Transactions Classifier 🚀",
         version=__version__,
@@ -64,9 +73,11 @@ def get_app(
         "Please take into account that `latest` version is the latest available in serving, "
         "not the latest in Model Registry.",
     )
-    versions = get_model_versions(model_name)
 
+    logger.info("Loading model versions from model registry")
+    versions = get_model_versions(model_name)
     loaded_models = {int(v.version): load_model(model_name, v) for v in versions}
+    logger.info("Loading model versions from model registry - done")
 
     for _version, model in loaded_models.items():
         router = prepare_router(model, _version, reporter=reporter)

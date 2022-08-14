@@ -14,7 +14,7 @@ export MODEL_VERSIONS=27,28
 test:
 	pytest tests/unit $(ARGS)
 
-serve:
+serve-locally:
 	serve
 
 entry:
