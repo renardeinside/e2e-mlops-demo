@@ -33,6 +33,7 @@ DEV_REQUIREMENTS = [
     "pyyaml",
     "pytest",
     "pytest-cov",
+    "coverage[toml]",
     "dbx",
     "delta-spark",
     "pandas",
