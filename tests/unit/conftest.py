@@ -3,13 +3,9 @@ This conftest.py contains handy components that prepare SparkSession and other r
 """
 
 import logging
-import os
 import shutil
 import tempfile
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator
-from unittest.mock import patch
 from uuid import uuid4
 
 import mlflow
@@ -23,60 +19,6 @@ from sklearn.datasets import make_classification
 from e2e_mlops_demo.ml.provider import Provider
 from e2e_mlops_demo.ml.trainer import Trainer
 from e2e_mlops_demo.models import MlflowInfo, SourceMetadata
-
-
-@dataclass
-class FileInfoFixture:
-    """
-    This class mocks the DBUtils FileInfo object
-    """
-
-    path: str
-    name: str
-    size: int
-    modificationTime: int
-
-
-class DBUtilsFixture:
-    """
-    This class is used for mocking the behaviour of DBUtils inside tests.
-    """
-
-    def __init__(self):
-        self.fs = self
-
-    def cp(self, src: str, dest: str, recurse: bool = False):
-        copy_func = shutil.copytree if recurse else shutil.copy
-        copy_func(src, dest)
-
-    def ls(self, path: str):
-        _paths = Path(path).glob("*")
-        _objects = [
-            FileInfoFixture(
-                str(p.absolute()), p.name, p.stat().st_size, int(p.stat().st_mtime)
-            )
-            for p in _paths
-        ]
-        return _objects
-
-    def mkdirs(self, path: str):
-        Path(path).mkdir(parents=True, exist_ok=True)
-
-    def mv(self, src: str, dest: str, recurse: bool = False):
-        copy_func = shutil.copytree if recurse else shutil.copy
-        shutil.move(src, dest, copy_function=copy_func)
-
-    def put(self, path: str, content: str, overwrite: bool = False):
-        _f = Path(path)
-
-        if _f.exists() and not overwrite:
-            raise FileExistsError("File already exists")
-
-        _f.write_text(content, encoding="utf-8")
-
-    def rm(self, path: str, recurse: bool = False):
-        deletion_func = shutil.rmtree if recurse else os.remove
-        deletion_func(path)
 
 
 @pytest.fixture(scope="session")
@@ -135,20 +77,6 @@ def mlflow_local() -> MlflowInfo:
     logging.info("Test session finished, unrolling the MLflow instance")
 
 
-@pytest.fixture(scope="session", autouse=True)
-def dbutils_fixture() -> Iterator[None]:
-    """
-    This fixture patches the `get_dbutils` function.
-    Please note that patch is applied on a string name of the function.
-    If you change the name or location of it, patching won't work.
-    :return:
-    """
-    logging.info("Patching the DBUtils object")
-    with patch("e2e_mlops_demo.common.get_dbutils", lambda _: DBUtilsFixture()):
-        yield
-    logging.info("Test session finished, patching completed")
-
-
 @pytest.fixture(scope="function")
 def dataset_fixture() -> pd.DataFrame:
     X, y = make_classification(n_samples=10000, n_classes=2, random_state=42)
@@ -160,7 +88,7 @@ def dataset_fixture() -> pd.DataFrame:
 
 @pytest.fixture(scope="function")
 def model_fixture(
-    spark: SparkSession, dataset_fixture: pd.DataFrame, mlflow_local: MlflowInfo
+        spark: SparkSession, dataset_fixture: pd.DataFrame, mlflow_local: MlflowInfo
 ) -> str:
     logging.info(
         f"Preparing model instance in mlflow registry {mlflow_local.registry_uri}"
