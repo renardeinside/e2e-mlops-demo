@@ -1,9 +1,12 @@
 {
-    "environments": {
-        "default": {
-            "profile": "e2e-mlops-demo",
-            "workspace_dir": "/Shared/dbx/e2e_mlops_demo",
-            "artifact_location": "dbfs:/Shared/dbx/projects/e2e_mlops_demo"
-        }
+  "environments": {
+    "default": {
+      "profile": "e2e-mlops-demo",
+      "storage_type": "mlflow",
+      "properties": {
+        "workspace_directory": "/Shared/dbx/e2e_mlops_demo",
+        "artifact_location": "dbfs:/Shared/dbx/projects/e2e_mlops_demo"
+      }
     }
+  }
 }

@@ -10,6 +10,7 @@ from e2e_mlops_demo.logging import configure_logger, LOGGING_CONFIG
 from e2e_mlops_demo.models import PredictionInfo
 from e2e_mlops_demo.reporting import Reporter, LoggingReporter
 from e2e_mlops_demo.serving._loader import get_model_versions, load_model
+from e2e_mlops_demo.serving._reporter import get_kafka_reporter
 from e2e_mlops_demo.serving._types import get_pydantic_model
 
 logger = configure_logger()
@@ -85,5 +86,6 @@ def get_app(
 
 
 def entrypoint():
-    _app = get_app()
+    reporter = get_kafka_reporter()
+    _app = get_app(reporter=reporter)
     uvicorn.run(_app, log_config=LOGGING_CONFIG)

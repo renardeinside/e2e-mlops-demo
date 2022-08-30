@@ -8,15 +8,7 @@ Please follow the `entry_points` documentation for more details on how to config
 from setuptools import find_packages, setup
 from e2e_mlops_demo import __version__
 
-PACKAGE_REQUIREMENTS = [
-    "PyYAML",  # reading configs
-    "openml",  # loading source data
-    # serving and logical components
-    "pydantic",
-    "uvicorn[standard]",
-    "fastapi",
-    # monitoring
-    "kafka-python",
+BASE_REQUIREMENTS = [
     # ml and training
     "hyperopt",
     "imbalanced-learn==0.9.1",
@@ -24,6 +16,17 @@ PACKAGE_REQUIREMENTS = [
     "mlflow==1.27.0",
     "threadpoolctl==2.2.0",
     "xgboost==1.5.2",
+    "PyYAML",  # reading configs
+    "openml",  # loading source data
+]
+
+SERVING_REQUIREMENTS = [
+    # serving and logical components
+    "pydantic",
+    "uvicorn[standard]",
+    "fastapi",
+    # monitoring
+    "kafka-python",
 ]
 
 DEV_REQUIREMENTS = [
@@ -35,7 +38,7 @@ DEV_REQUIREMENTS = [
     "pytest-cov",
     "coverage[toml]",
     "pytest-docker",
-    "dbx",
+    "dbx>=0.7,<0.8",
     "delta-spark",
     "pandas",
 ]
@@ -44,8 +47,8 @@ setup(
     name="e2e_mlops_demo",
     packages=find_packages(exclude=["tests", "tests.*"]),
     setup_requires=["wheel"],
-    install_requires=PACKAGE_REQUIREMENTS,
-    extras_require={"dev": DEV_REQUIREMENTS},
+    install_requires=BASE_REQUIREMENTS,
+    extras_require={"dev": DEV_REQUIREMENTS, "serving": SERVING_REQUIREMENTS},
     entry_points={
         "console_scripts": [
             "loader = e2e_mlops_demo.tasks.dataset_loader_task:entrypoint",

@@ -38,7 +38,7 @@ custom:
 
 environments:
   default:
-    jobs:
+    workflows:
       - name: "e2e-mlops-demo-main"
         job_clusters:
           - job_cluster_key: "loader-cluster"

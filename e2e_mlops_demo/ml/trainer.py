@@ -54,7 +54,8 @@ class Trainer:
         for step_name, _ in pipeline.steps:
             _params.pop(step_name)
 
-        mlflow.log_params(_params)
+        for k, v in _params.items():
+            mlflow.log_param(k, v)
 
         metrics = {}
 

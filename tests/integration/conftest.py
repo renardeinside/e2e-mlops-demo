@@ -1,5 +1,4 @@
 import logging
-from pathlib import Path
 
 import pytest
 from kafka import KafkaClient
@@ -11,12 +10,6 @@ def check_kafka(bootstrap_servers: str):
         return True
     except Exception as _:
         return False
-
-
-@pytest.fixture(scope="session")
-def docker_compose_file():
-    _p = Path(__file__).parent.parent.parent / "docker" / "docker-compose-test.yml"
-    return _p.absolute()
 
 
 @pytest.fixture(scope="session")

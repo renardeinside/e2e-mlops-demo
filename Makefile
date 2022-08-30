@@ -1,3 +1,9 @@
+# local .env for tests
+ifneq (,$(wildcard ./.env))
+    include .env
+    export
+endif
+
 # spark log4j config
 export SPARK_CONF_DIR=$(PWD)/conf/local
 # pyspark python entrypoints

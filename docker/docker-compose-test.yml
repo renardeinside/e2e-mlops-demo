@@ -17,4 +17,9 @@ services:
              echo '' > /etc/confluent/docker/ensure
              /etc/confluent/docker/run"
 
-
+  mlflow:
+    build:
+      context: ../
+      dockerfile: ./docker/Dockerfile.mlflow
+    ports:
+      - '5005:5005'
