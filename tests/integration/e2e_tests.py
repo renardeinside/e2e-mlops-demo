@@ -20,3 +20,5 @@ def test_reporter(kafka_fixture):
     )
     records = consumer.poll(10 * 1000)
     assert len(records) == 1
+
+def test_serving()

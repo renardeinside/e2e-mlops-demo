@@ -43,12 +43,14 @@ DEV_REQUIREMENTS = [
     "pandas",
 ]
 
+ALL_REQUIREMENTS = DEV_REQUIREMENTS + SERVING_REQUIREMENTS
+
 setup(
     name="e2e_mlops_demo",
     packages=find_packages(exclude=["tests", "tests.*"]),
     setup_requires=["wheel"],
     install_requires=BASE_REQUIREMENTS,
-    extras_require={"dev": DEV_REQUIREMENTS, "serving": SERVING_REQUIREMENTS},
+    extras_require={"dev": DEV_REQUIREMENTS, "serving": SERVING_REQUIREMENTS, "all": ALL_REQUIREMENTS},
     entry_points={
         "console_scripts": [
             "loader = e2e_mlops_demo.tasks.dataset_loader_task:entrypoint",
