@@ -13,7 +13,7 @@ BASE_REQUIREMENTS = [
     "hyperopt",
     "imbalanced-learn==0.9.1",
     "scikit-learn==1.1.2",
-    "mlflow==1.27.0",
+    "mlflow>=2.16.0",
     "threadpoolctl==2.2.0",
     "xgboost==1.5.2",
     "PyYAML",  # reading configs
