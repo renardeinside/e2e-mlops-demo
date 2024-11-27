@@ -11,11 +11,11 @@ from e2e_mlops_demo import __version__
 BASE_REQUIREMENTS = [
     # ml and training
     "hyperopt",
-    "imbalanced-learn==0.9.1",
-    "scikit-learn==1.1.2",
+    "imbalanced-learn>=0.9.1",
+    "scikit-learn>=1.5.0",
     "mlflow>=2.16.0",
-    "threadpoolctl==2.2.0",
-    "xgboost==1.5.2",
+    "threadpoolctl>=2.2.0",
+    "xgboost>=1.5.2",
     "PyYAML",  # reading configs
     "openml",  # loading source data
 ]
@@ -32,7 +32,7 @@ SERVING_REQUIREMENTS = [
 DEV_REQUIREMENTS = [
     "setuptools",
     "wheel",
-    "pyspark==3.2.2",
+    "pyspark>=3.2.2",
     "pyyaml",
     "pytest",
     "pytest-cov",
